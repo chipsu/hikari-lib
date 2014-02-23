@@ -1,0 +1,10 @@
+*.user.*
+*.log
+*.swp
+*.geany
+tmp/*
+.buildpath
+.project
+.settings/
+composer.lock
+
