@@ -2,6 +2,7 @@
 
 namespace hikari\application;
 
+use \hikari\autoload\Autoload as Autoload;
 use \hikari\component\Component as Component;
 use \hikari\config\Php as PhpConfig;
 
@@ -16,8 +17,9 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
         }
         $this->path = $properties['path'];
         unset($properties['path']);
+        Autoload::push($this->path . '/..');
         if(empty($properties['config'])) {
-            $configFile = $this->path . 'config/main.php';
+            $configFile = $this->path . '/config/main.php';
             if(is_file($configFile)) {
                 $config = new PhpConfig;
                 $config->load($configFile);

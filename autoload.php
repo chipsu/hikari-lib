@@ -1,22 +1,12 @@
 <?php
 
+require_once __DIR__ . '/autoload/Autoload.php';
 
-$autoload = function($class) {
-    #$paths = [HI_APP_PATH . '/../', __DIR__ . '/../'];
-    foreach($paths as $path) {
-        $file = $path . str_replace('\\', '/', $class) . '.php';
-        if(is_file($file)) {
-            require_once($file);
-            return;
-        }
-    }
-};
+use hikari\autoload\Autoload as Autoload;
 
-$errorHandler = function($code, $message, $filename, $lineno) {
+set_error_handler(function($code, $message, $filename, $lineno) {
     throw new \ErrorException($message, $code, 1, $filename, $lineno);
-};
-
-set_error_handler($errorHandler);
+});
 
 set_exception_handler(function($exception) {
 	error_log($exception);
@@ -25,4 +15,6 @@ set_exception_handler(function($exception) {
 	echo '</pre>';
 });
 
-spl_autoload_register($autoload, true, false);
+spl_autoload_register(Autoload::$load, true, false);
+
+Autoload::push(__DIR__ . '/..');

@@ -67,6 +67,9 @@ abstract class ComponentAbstract implements ComponentInterface {
                         break;
                     }
                 }
+                if(!class_exists($class)) {
+                    \hikari\exception\Core::raise('class "%s" not found', $class);
+                }
             }
             $result = new $class($properties);
             if($options['shared'])
