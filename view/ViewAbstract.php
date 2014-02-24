@@ -23,7 +23,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
 
     public function partial($name, array $options = ['direct' => false]) {
         // FIXME: hardcoded path
-        $file = HI_APP_PATH . $name . '.' . $this->extension;
+        $file = $this->application->path . '/' . $name . '.' . $this->extension;
         if(!is_file($file)) {
             \hikari\exception\NotFound::raise('Could not find view file "%s"', $file);
         }

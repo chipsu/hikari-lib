@@ -7,11 +7,17 @@ use \hikari\config\Php as PhpConfig;
 
 abstract class ApplicationAbstract extends Component implements ApplicationInterface {
     public $config = [];
+    public $path;
 
     public function __construct(array $properties = array()) {
         $this->application = $this;
+        if(empty($properties['path'])) {
+            ArgumentException::raise('$properties[path]');
+        }
+        $this->path = $properties['path'];
+        unset($properties['path']);
         if(empty($properties['config'])) {
-            $configFile = HI_APP_PATH . 'config/' . HI_APP_CONFIG;
+            $configFile = $this->path . 'config/main.php';
             if(is_file($configFile)) {
                 $config = new PhpConfig;
                 $config->load($configFile);
