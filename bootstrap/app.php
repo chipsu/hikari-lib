@@ -1,12 +1,20 @@
 <?php
 
-require_once '../lib/hikari/autoload.php';
+require_once __DIR__ . '/../autoload.php';
 
-try {
-    $app = new \hikari\application\Application;
-    $app->run();
-} catch(Exception $ex) {
-    echo '<pre>';
-    echo htmlspecialchars($ex);
-    echo '</pre>';
+namespace \hikari\bootstrap;
+
+class Bootstrap {
+
+	public function dir($dir) {
+		return $this->app(['path' => $dir . '/../app']);
+	}
+
+	public function app(array $parameters) {
+		$app = new \hikari\application\Application($parameters);
+		return $app->run();
+	}
 }
+
+$bootstrap = new Bootstrap;
+return $bootstrap;
