@@ -9,17 +9,21 @@ use \hikari\config\Php as PhpConfig;
 abstract class ApplicationAbstract extends Component implements ApplicationInterface {
     public $config = [];
     public $path;
+    public $publicPath;
 
     public function __construct(array $properties = array()) {
         $this->application = $this;
         if(empty($properties['path'])) {
             ArgumentException::raise('$properties[path]');
         }
+        if(empty($properties['publicPath'])) {
+            ArgumentException::raise('$properties[publicPath]');
+        }
         $this->path = $properties['path'];
         unset($properties['path']);
         Autoload::push($this->path . '/..');
         if(empty($properties['config'])) {
-            $configFile = $this->path . '/config/main.php';
+            $configFile = empty($properties['configFile']) ? $this->path . '/config/main.php' : $properties['configFile'];
             if(is_file($configFile)) {
                 $config = new PhpConfig;
                 $config->load($configFile);
@@ -27,9 +31,6 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
             }
         }
         parent::__construct($properties);
-        #if($this->applicationConfig) {
-        #    $this->config->merge($this->applicationConfig);
-        #}
     }
     
     public abstract function run();

@@ -17,4 +17,5 @@ set_exception_handler(function($exception) {
 
 spl_autoload_register(Autoload::$load, true, false);
 
+Autoload::init();
 Autoload::push(__DIR__ . '/..');
