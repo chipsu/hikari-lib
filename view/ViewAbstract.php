@@ -12,16 +12,16 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $extension;
     public $translator;
 
-    public function translator() {
+    function translator() {
         return $this->component('translator');
     }
 
-    public function render($name) {
+    function render($name) {
         $this->content = $this->partial('view/' . $name);
         return $this->partial('layout/' . $this->layout);
     }
 
-    public function partial($name, array $options = ['direct' => false]) {
+    function partial($name, array $options = ['direct' => false]) {
         // FIXME: hardcoded path
         $file = $this->application->path . '/' . $name . '.' . $this->extension;
         if(!is_file($file)) {
@@ -38,11 +38,11 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         }
     }
 
-    public function encode($string) {
+    function encode($string) {
         return htmlspecialchars($string);
     }
 
-    public function get($key, $default = null, $encode = true) {
+    function get($key, $default = null, $encode = true) {
         if(isset($this->data[$key])) {
             $result = $this->data[$key];
         } else {
@@ -52,16 +52,16 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $encode ? htmlspecialchars($result) : $result;
     }
 
-    public function set($key, $value) {
+    function set($key, $value) {
         $this->data[$key] = $value;
         return $this;
     }
 
-    public function has($key) {
+    function has($key) {
         return isset($this->data[$key]);
     }
 
-    public function str($key, array $args =  [], $encode = true) {
+    function str($key, array $args =  [], $encode = true) {
         $result = $this->translator()->translate($key);
         return $encode ? htmlspecialchars($result) : $result;        
     }

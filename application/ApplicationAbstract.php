@@ -11,7 +11,7 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
     public $path;
     public $publicPath;
 
-    public function __construct(array $properties = array()) {
+    function __construct(array $properties = array()) {
         $this->application = $this;
         if(empty($properties['path'])) {
             ArgumentException::raise('$properties[path]');

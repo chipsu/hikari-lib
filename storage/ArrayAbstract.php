@@ -9,7 +9,7 @@ abstract class ArrayAbstract extends StorageAbstract {
         $this->data = &$data;
     }
 
-    public function has($keys) {
+    function has($keys) {
         if(is_array($key)) {
             $data = $this->data;
             foreach($key as $k) {
@@ -23,7 +23,7 @@ abstract class ArrayAbstract extends StorageAbstract {
         return isset($this->data[$key]);
     }
 
-    public function get($key, $default = null) {
+    function get($key, $default = null) {
         if(is_array($key)) {
             $data = $this->data;
             foreach($key as $k) {
@@ -37,7 +37,7 @@ abstract class ArrayAbstract extends StorageAbstract {
         return isset($this->data[$key]) ? $this->data[$key] : $default;
     }
     
-    public function set($key, $value, $options = null) {
+    function set($key, $value, $options = null) {
         if(is_array($key)) {
             $data = &$this->data;
             $last = array_pop($key);
@@ -54,7 +54,7 @@ abstract class ArrayAbstract extends StorageAbstract {
         return $this;
     }
     
-    public function value($key, &$value) {
+    function value($key, &$value) {
         if(is_array($key)) {
             $data = $this->data;
             foreach($key as $k) {
@@ -72,11 +72,11 @@ abstract class ArrayAbstract extends StorageAbstract {
         return false;
     }
 
-    public function values() {
+    function values() {
         return $this->data;
     }
     
-    public function remove($key) {
+    function remove($key) {
         if(is_array($key)) {
             $data = &$this->data;
             $last = array_pop($key);

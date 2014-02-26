@@ -9,7 +9,7 @@ interface ConfigInterface extends \hikari\storage\StorageInterface {
      * @param  StorageInterface|Array $config -
      * @return ConfigInterface -
      */
-    public function load($config);
+    function load($config);
     
     /**
      * Merge with other StorageInterface or Array.
@@ -17,5 +17,5 @@ interface ConfigInterface extends \hikari\storage\StorageInterface {
      * @param boolean $overwrite -
      * @return ConfigInterface -
      */
-    public function merge($config, $overwrite = false);
+    function merge($config, $overwrite = false);
 }

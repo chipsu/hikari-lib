@@ -9,14 +9,14 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
     public $view;
     public $id;
 
-    public function __construct(array $properties = []) {
+    function __construct(array $properties = []) {
         parent::__construct($properties);
         if(empty($this->id)) {
             $this->id = get_class($this);
         }
     }
 
-    public function run() {
+    function run() {
         $methodName = $this->config->get('actionPrefix', '') . $this->action->id;
         $method = new \ReflectionMethod($this, $methodName);
 

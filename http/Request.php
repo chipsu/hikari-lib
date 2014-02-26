@@ -11,7 +11,7 @@ class Request extends Component {
     public $post;
     public $request;
     
-    public function __construct(array $parameters = []) {
+    function __construct(array $parameters = []) {
         if(empty($parameters['uri'])) {
             $parameters['uri'] = new Uri;
         }
@@ -27,19 +27,19 @@ class Request extends Component {
         parent::__construct($parameters);
     }
     
-    public function get($key, $default = null) {
+    function get($key, $default = null) {
         return isset($this->get[$key]) ? $this->get[$key] : $default;
     }
     
-    public function post($key, $default = null) {
+    function post($key, $default = null) {
         return isset($this->post[$key]) ? $this->post[$key] : $default;
     }
     
-    public function request($key, $default = null) {
+    function request($key, $default = null) {
         return isset($this->request[$key]) ? $this->request[$key] : $default;
     }
     
-    public function __toString() {
+    function __toString() {
         return (string)$this->uri;
     }
 }

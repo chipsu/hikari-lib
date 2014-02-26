@@ -5,11 +5,11 @@ namespace hikari\config;
 class Php extends Config {
     protected $cache;
 
-    public function __construct(array $data = []) {
+    function __construct(array $data = []) {
         parent::__construct($data);
     }
 
-    public function load($config) {
+    function load($config) {
         if(is_string($config)) {
             if(!$this->cache || !$this->cache->value([__CLASS__, $config], $this->data)) {
                 $this->data = [];
@@ -26,7 +26,7 @@ class Php extends Config {
         return parent::load($config);
     }
 
-    public function merge($config, $overwrite = false) {
+    function merge($config, $overwrite = false) {
         if(is_string($config)) {
             if(!file_exists($config)) {
                 \hikari\exception\Argument::raise('File "%s" does not exist!', $config);
@@ -39,7 +39,7 @@ class Php extends Config {
         return parent::merge($config, $overwrite);
     }
     
-    public function save($filename) {
+    function save($filename) {
         $data = '<?php '.PHP_EOL;
         $data .= '$config = ';
         $data .= $this->toPhpConfig();
@@ -48,7 +48,7 @@ class Php extends Config {
         }
     }
     
-    public function toPhpConfig() {
+    function toPhpConfig() {
         $result = '';
         foreach($this->data as $key => $value) {
             $result .= '$this->set(\''.addslashes($key).'\', ';

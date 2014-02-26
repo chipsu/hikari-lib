@@ -3,7 +3,7 @@
 namespace hikari\utilities;
 
 class Arrays {
-    public static function merge(array $array1, array $array2) {
+    static function merge(array $array1, array $array2) {
         $result = array();
         $arrays = func_get_args();
         foreach($arrays as $array) {

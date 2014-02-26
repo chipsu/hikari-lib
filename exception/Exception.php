@@ -4,7 +4,7 @@ namespace hikari\exception;
 
 class Exception extends \Exception {
 
-    static public function raise($inner = null, $code = 0, $format = null) {
+    static function raise($inner = null, $code = 0, $format = null) {
         $args = func_get_args();
         $class = get_called_class();
         $previous = !empty($args) && $args[0] instanceof \Exception ? array_shift($args) : null;
@@ -18,7 +18,7 @@ class Exception extends \Exception {
         throw new $class($message, $code, $previous);
     }
     
-    public function __construct($message, $code = 0, $previous = null) {
+    function __construct($message, $code = 0, $previous = null) {
         parent::__construct($message, $code, $previous);
     }
 }

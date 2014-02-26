@@ -3,7 +3,7 @@
 namespace hikari\router;
 
 class Router extends RouterAbstract {
-    public function route($request) {
+    function route($request) {
         $path = array_filter(explode('/', trim($request->uri->path, '/')));
         $controller = ucfirst(count($path) ? array_shift($path) : 'index');
         $action = count($path) ? array_shift($path) : 'index';
@@ -13,5 +13,5 @@ class Router extends RouterAbstract {
         return $route;
     }
     
-    //public function build($name, array $parameters = [], $parent = null);
+    //function build($name, array $parameters = [], $parent = null);
 }

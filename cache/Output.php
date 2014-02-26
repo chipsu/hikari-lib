@@ -12,6 +12,6 @@ class Output {
      * @param $key string|array Unique cache key
      * @param $options array Cache options
      */
-    public function begin($key, array $options = []);
-    public function end();
+    function begin($key, array $options = []);
+    function end();
 }

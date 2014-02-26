@@ -3,5 +3,5 @@
 namespace hikari\controller;
 
 interface ControllerInterface extends \hikari\component\ComponentInterface {
-    public function run(); 
+    function run(); 
 }

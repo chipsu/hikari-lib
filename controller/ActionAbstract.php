@@ -5,7 +5,7 @@ namespace hikari\controller;
 abstract class ActionAbstract extends \hikari\component\Component implements ActionInterface {
     public $id;
 
-    public function id() {
+    function id() {
         return $this->id;
     }
 }

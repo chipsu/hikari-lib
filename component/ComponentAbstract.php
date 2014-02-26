@@ -10,7 +10,7 @@ abstract class ComponentAbstract implements ComponentInterface {
     public $application;
     protected static $components = [];
 
-    public function __construct(array $properties = []) {
+    function __construct(array $properties = []) {
         foreach($properties as $key => $value) {
             if(property_exists($this, $key)) {
                 $this->$key = $value;
@@ -24,7 +24,7 @@ abstract class ComponentAbstract implements ComponentInterface {
     /**
      * Link a known component into this object.
      */
-    public function component($component) {
+    function component($component) {
         if(isset($this->$component)) {
             return $this->$component;
         }
@@ -34,7 +34,7 @@ abstract class ComponentAbstract implements ComponentInterface {
     /**
      * Link a Component into this object.
      */
-    public function load($component, array $properties = [], array $options = []) {
+    function load($component, array $properties = [], array $options = []) {
         $result = null;
 
         // Grab config from application

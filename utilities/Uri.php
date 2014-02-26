@@ -16,7 +16,7 @@ class Uri extends Component {
     public $query;
     public $fragment;
     
-    public function __construct($uri = null) {
+    function __construct($uri = null) {
         if($uri === null) {
             $https = static::isServerHttps();
             $scheme = $https ? 'https' : 'http';
@@ -37,7 +37,7 @@ class Uri extends Component {
         parent::__construct($uri);
     }
         
-    public function __toString() {
+    function __toString() {
         $scheme = $this->scheme ? $this->scheme : 'http';
         $result = $scheme . '://';
         

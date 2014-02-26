@@ -10,36 +10,36 @@ class Translator {
     protected $strings;
     protected $cache;
     
-    public function __construct($locale = null) {
+    function __construct($locale = null) {
         $this->locale = $locale;
         $this->strings = array();
     }
     
-    public function getCache() {
+    function getCache() {
         return $this->cache;
     }
     
-    public function setCache($value) {
+    function setCache($value) {
         $this->cache = $value;
     }
     
-    public function initComponent(array $config) {
+    function initComponent(array $config) {
         if(isset($config['locale'])) $this->locale = $config['locale'];
     }
     
-    public function getLocale() {
+    function getLocale() {
         return empty($this->locale) ? \Locale::getDefault() : $this->locale;
     }
     
-    public function getLocales() {
+    function getLocales() {
         return array($this->getLocale(), null);
     }
     
-    public function load($fileName) {
+    function load($fileName) {
         require($fileName);
     }
     
-    public function loadPath($path) {
+    function loadPath($path) {
         foreach($this->getLocales() as $locale) {
             $file = $path.'/strings'.($locale ? '.'.$locale : '').'.php';
             if(is_file($file)) {
@@ -48,7 +48,7 @@ class Translator {
         }
     }
     
-    public function translate($key, array $args = array()) {
+    function translate($key, array $args = array()) {
         foreach($this->getLocales() as $locale) {
             if(isset($this->strings[$locale][$key])) {
                 $format = $this->strings[$locale][$key];
@@ -62,7 +62,7 @@ class Translator {
         return $args ? vsprintf($format, $args) : $format;
     }
     
-    public function add($locale, array $strings) {
+    function add($locale, array $strings) {
         $this->strings[$locale] = isset($this->strings[$locale]) ? array_merge($strings, $this->strings[$locale]) : $strings;
     }
 }

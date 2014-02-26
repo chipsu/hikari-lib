@@ -8,7 +8,7 @@ class Autoload {
 	public static $classes = [];
 	public static $cache;
 
-	public static function init() {
+	static function init() {
 		// TODO: Use cache interface
 		$db = new \MongoClient();
 		static::$cache = $db->autoload->cache3;
@@ -20,7 +20,7 @@ class Autoload {
 		}
 	}
 
-	public static function load($class) {
+	static function load($class) {
 		if(isset(static::$classes[$class])) {
 			require_once(static::$classes[$class]);
 			return true;
@@ -45,7 +45,7 @@ class Autoload {
 	}
 
 	// TODO: push prefix?
-	public static function push($path) {
+	static function push($path) {
 		array_unshift(static::$paths, $path);
 	}
 }
