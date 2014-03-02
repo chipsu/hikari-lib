@@ -23,10 +23,13 @@ abstract class RouterAbstract extends Component implements RouterInterface {
     function route($request) {
         foreach($this->routes as $route) {
             if($match = $route->match($request)) {
-                #return $match;
                 $result = clone $request;
                 $result->get = array_merge($result->get, $match);
                 $result->request = array_merge($result->request, $match);
+                if($route->forward) {
+                    $request = $result;
+                    continue;
+                }
                 return $result;
             }
         }
