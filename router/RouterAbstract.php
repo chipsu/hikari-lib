@@ -23,7 +23,11 @@ abstract class RouterAbstract extends Component implements RouterInterface {
     function route($request) {
         foreach($this->routes as $route) {
             if($match = $route->match($request)) {
-                return $match;
+                #return $match;
+                $result = clone $request;
+                $result->get = array_merge($result->get, $match);
+                $result->request = array_merge($result->request, $match);
+                return $result;
             }
         }
         \hikari\exception\NotFound::raise();

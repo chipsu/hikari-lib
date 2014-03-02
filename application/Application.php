@@ -15,17 +15,20 @@ class Application extends ApplicationAbstract {
         }
         $this->load('request', [], ['register' => true]);
         $this->load('router', [], ['register' => true]);
-        echo $this->request($this->request);
+        echo $this->request();
     }
 
-    function request($request) {
-        $route = $this->router->route($request);
-        $action = $this->load('action', ['id' => $route->action]);
-        $controller = $this->load($route->controller, [
+    function request() {
+        $request = $this->router->route($this->request);
+        $action = $this->load('action', ['id' => $request->get('action')]);
+        $controller = $this->load($request->get('controller'), [
             'application' => $this,
             'action' => $action,
-            'request' => $route->request,
+            'request' => $request,
         ]);
+        if(!$controller instanceof \hikari\controller\ControllerInterface) {
+            \hikari\core\Exception::raise();
+        }
         return $controller->run();
     }
 
