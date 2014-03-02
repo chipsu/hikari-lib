@@ -11,9 +11,14 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $content;
     public $extension;
     public $translator;
+    public $router;
+
+    function router() {
+        return $this->router ?: $this->component('router');
+    }
 
     function translator() {
-        return $this->component('translator');
+        return $this->translator ?: $this->component('translator');
     }
 
     function render($name) {
@@ -64,6 +69,10 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     function str($key, array $args =  [], $encode = true) {
         $result = $this->translator()->translate($key);
         return $encode ? htmlspecialchars($result) : $result;        
+    }
+
+    function url($route = null, array $args = []) {
+        return $this->router()->build($route, $args);
     }
 
     protected function includeFile($file) {
