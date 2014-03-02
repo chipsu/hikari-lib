@@ -23,20 +23,10 @@ abstract class RouterAbstract extends Component implements RouterInterface {
     function route($request) {
         foreach($this->routes as $route) {
             if($match = $route->match($request)) {
-                var_dump($match);
-                die;
+                return $match;
             }
         }
-        die('poosdfsdf');
-        $path = array_filter(explode('/', trim($request->uri->path, '/')));
-        $controller = ucfirst(count($path) ? array_shift($path) : 'index');
-        $action = count($path) ? array_shift($path) : 'index';
-        $match = new Match([
-            'controller' => '\app\controller\\' . $controller,
-            'action' => $action,
-            'request' => $request,
-        ]);
-        return $match;
+        \hikari\exception\NotFound::raise();
     }
     
     //function build($name, array $parameters = [], $parent = null);
