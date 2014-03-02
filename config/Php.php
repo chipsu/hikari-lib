@@ -3,7 +3,7 @@
 namespace hikari\config;
 
 class Php extends Config {
-    protected $cache;
+    public $cache;
 
     function __construct(array $data = []) {
         parent::__construct($data);
@@ -11,14 +11,16 @@ class Php extends Config {
 
     function load($config) {
         if(is_string($config)) {
-            if(!$this->cache || !$this->cache->value([__CLASS__, $config], $this->data)) {
+            is_file($config) or \hikari\exception\Argument::raise('File "%s" does not exist!', $config);
+            $this->hash = filemtime($config);
+            if(!$this->cache || !$this->cache->value([$this->hash, $config], $this->data)) {
                 $this->data = [];
                 $this->merge($config, true);
                 if($file = \hikari\utilities\File::getUserFile($config, true)) {
                     $this->merge($file, true);
                 }
                 if($this->cache) {
-                    $this->cache->set([__CLASS__, $config], $this->data);
+                    $this->cache->set([$this->hash, $config], $this->data);
                 }
             }
             return $this;
@@ -28,9 +30,7 @@ class Php extends Config {
 
     function merge($config, $overwrite = false) {
         if(is_string($config)) {
-            if(!file_exists($config)) {
-                \hikari\exception\Argument::raise('File "%s" does not exist!', $config);
-            }
+            is_file($config) or \hikari\exception\Argument::raise('File "%s" does not exist!', $config);
             if($result = require($config)) {
                 $this->data = $overwrite ? \hikari\utilities\Arrays::merge($this->data, $result) : \hikari\utilities\Arrays::merge($result, $this->data);
             }

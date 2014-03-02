@@ -3,9 +3,11 @@
 namespace hikari\config;
 
 abstract class ConfigAbstract extends \hikari\storage\ArrayAbstract implements ConfigInterface {
-    protected $data;
+    public $data;
+    public $hash;
 
     function __construct($data = []) {
+        $this->hash = __FILE__;
         $this->load($data);
         parent::__construct($this->data);
     }

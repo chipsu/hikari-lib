@@ -8,6 +8,7 @@ use \hikari\config\Php as PhpConfig;
 
 abstract class ApplicationAbstract extends Component implements ApplicationInterface {
     public $config = [];
+    public $configHash;
     public $path;
     public $publicPath;
 
