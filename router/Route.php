@@ -18,7 +18,41 @@ class Route extends Component {
     }
 
     function match($request) {
-        foreach($this->regexp as $index => $regexp) {
+        if(!$this->target) {
+            return false;
+        }
+        foreach($this->regexp as $index => $parts) {
+            $matches = [];
+            foreach($parts as $part => $regexp) {
+                if(!preg_match($regexp, $request->uri->$part, $match)) {
+                    $matches = false;
+                    break;
+                }
+                $matches[] = $match;
+            }
+            if($matches) {
+                $match = call_user_func_array('array_merge', $matches);
+                // CamelCase Controller temp fix.
+                $replace = function($variable) use($match) {
+                    $key = strtolower($variable[1]);
+                    $replace = $match[$key];
+                    if(strtoupper($key[0]) == $variable[1][0]) {
+                        $replace = ucfirst($replace);
+                    }
+                    return $replace;
+                };
+                foreach($this->target as $key => $value) {
+                    if($value instanceof \Closure) {
+                        $value = call_user_func($value, $this);
+                    }
+                    if(!isset($match[$key])) {
+                        $match[$key] = $value;
+                    }   
+                    $match[$key] = preg_replace_callback('/\:([\w]+)/', $replace, $match[$key]);
+                }
+                return $match;
+            }
+            continue;
             if(preg_match($regexp, $request->uri->path, $match)) {
                 // CamelCase Controller temp fix.
                 $replace = function($variable) use($match) {
@@ -44,10 +78,34 @@ class Route extends Component {
         return false;
     }
 
-    function compile() {
-        if(empty($this->target)) {
-            \hikari\exception\Argument('No target set');
+    function build($name, array $parameters) {
+        if($name != $this->name) {
+            return false;
         }
+        if(!$this->format) {
+            return false;
+        }
+        foreach($this->format as $index => $format) {
+            # $uri = new Uri
+            # foreach parts
+            #   $uri->$part = preg_replace($pattern, $parameters)
+            #   if(!preg_match($this->regexp[$index][$part], $uri->$part))
+            #      $uri = false
+            #      break
+            # if($uri)
+            #   return $uri
+            foreach($format as $part => $pattern) {
+                if($part == 'domain') {
+                    return 'http://' . $pattern;
+                }
+                // if has all $parameters
+                // use regexp?
+            }
+        }
+        return false;
+    }
+
+    function compile() {
         foreach(array('controller', 'action') as $index => $name) {
             if(isset($this->target[$index])) {
                 $this->target[$name] = $this->target[$index];
@@ -61,15 +119,26 @@ class Route extends Component {
             if(is_string($this->format)) {
                 $this->format = [$this->format];
             }
-            foreach($this->format as $format) {
-                $replace = function($match) {
-                    return sprintf('(?<%s>[\w]+)', $match[1]);
-                };
-                $regexp = '/^' . preg_replace_callback('/\\\:([\w]+)/', $replace, preg_quote($format, '/')) . '$/';
+            foreach($this->format as &$format) {
+                if(is_string($format)) {
+                    $format = ['path' => $format];
+                }
+                $regexp = [];
+                foreach($format as $part => $pattern) {
+                    $replace = function($match) {
+                        return sprintf('(?<%s>[\w]+)', $match[1]);
+                    };
+                    $regexp[$part] = '/^' . preg_replace_callback('/\\\:([\w]+)/', $replace, preg_quote($pattern, '/')) . '$/';
+                }
                 $this->regexp[] = $regexp;
             }
         } else if(is_string($this->regexp)) {
             $this->regexp = [$this->regexp];
+            foreach($this->regexp as &$regexp) {
+                if(is_string($regexp)) {
+                    $regexp = ['path' => $regexp];
+                }
+            }
         }
     }
 }

@@ -36,7 +36,13 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         \hikari\exception\NotFound::raise();
     }
     
-    function build($name, array $parameters = [], $parent = null) {
+    function build($name, array $parameters = []) {
+        foreach($this->routes as $route) {
+            if($route = $route->build($name ?: 'default', $parameters)) {
+                return $route;
+            }
+        }
         return '/?' . http_build_query($parameters);
     }
 }
+    
