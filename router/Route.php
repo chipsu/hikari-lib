@@ -126,8 +126,18 @@ class Route extends Component {
 
     function compilePattern($pattern) {
         $callback = function($match) {
-            return sprintf('(?<%s>[\w\-_]+)', $match[1]);
+            $types = [
+                'string' => '\w\-_',
+                'alpha' => '\w',
+                'int' => '\d',
+            ];
+            $type = trim($match['type'], ' ()\\');
+            $type = isset($types[$type]) ? $types[$type] : $types['string'];
+            return sprintf('(?<%s>[%s]+)', $match['name'], $type);
         };
-        return '/^' . preg_replace_callback('/\\\:([\w]+)/', $callback, preg_quote($pattern, '/')) . '$/';
+        $search = '/\\\:(?<name>[\w]+)(?<type>\\\\\([\w]+\\\\\)|)/';
+        $pattern = preg_quote($pattern, '/');
+        $pattern = preg_replace_callback($search, $callback, $pattern);
+        return '/^' . $pattern . '$/';
     }
 }
