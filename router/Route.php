@@ -3,6 +3,7 @@
 namespace hikari\router;
 
 use \hikari\component\Component as Component;
+use \hikari\utilities\Uri as Uri;
 
 class Route extends Component {
     public $name;
@@ -39,7 +40,7 @@ class Route extends Component {
                     if(!isset($match[$key])) {
                         $match[$key] = $value;
                     }   
-                    $match[$key] = $this->replace($match[$key], $match);
+                    $match[$key] = $this->replaceParameters($match[$key], $match);
                 }
                 return $match;
             }
@@ -55,20 +56,17 @@ class Route extends Component {
             return false;
         }
         foreach($this->format as $index => $format) {
-            # $uri = new Uri
-            # foreach parts
-            #   $uri->$part = preg_replace($pattern, $parameters)
-            #   if(!preg_match($this->regexp[$index][$part], $uri->$part))
-            #      $uri = false
-            #      break
-            # if($uri)
-            #   return $uri
+            $uri = [];
             foreach($format as $part => $pattern) {
-                if($part == 'domain') {
-                    return 'http://' . $pattern;
+                $uri[$part] = $this->replaceParameters($pattern, $parameters);
+                if(!preg_match($this->regexp[$index][$part], $uri[$part])) {
+                    $uri = false;
+                    break;
                 }
-                // if has all $parameters
-                // use regexp?
+            }
+            if($uri) {
+                $uri = new Uri($uri);
+                return (string)$uri;
             }
         }
         return false;
@@ -108,13 +106,16 @@ class Route extends Component {
         }
     }
 
-    function replace($subject, array $match) {
+    function replaceParameters($subject, array $parameters) {
         // CamelCase Controller temp fix.
-        $callback = function($variable) use($match) {
+        $callback = function($variable) use($parameters) {
             $key = strtolower($variable[1]);
-            $result = $match[$key];
-            if(strtoupper($key[0]) == $variable[1][0]) {
-                $result = ucfirst($result);
+            $result = false;
+            if(isset($parameters[$key])) {
+                $result = $parameters[$key];
+                if(strtoupper($key[0]) == $variable[1][0]) {
+                    $result = ucfirst($result);
+                }
             }
             return $result;
         };
@@ -123,7 +124,7 @@ class Route extends Component {
 
     function compilePattern($pattern) {
         $callback = function($match) {
-            return sprintf('(?<%s>[\w]+)', $match[1]);
+            return sprintf('(?<%s>[\w\-_]+)', $match[1]);
         };
         return '/^' . preg_replace_callback('/\\\:([\w]+)/', $callback, preg_quote($pattern, '/')) . '$/';
     }
