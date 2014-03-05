@@ -68,8 +68,7 @@ class Route extends Component {
                 }
             }
             if($uri) {
-                $uri = new Uri($uri);
-                return (string)$uri;
+                return new Uri($uri);
             }
         }
         return false;
