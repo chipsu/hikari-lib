@@ -32,15 +32,6 @@ class Route extends Component {
             }
             if($matches) {
                 $match = call_user_func_array('array_merge', $matches);
-                // CamelCase Controller temp fix.
-                $replace = function($variable) use($match) {
-                    $key = strtolower($variable[1]);
-                    $replace = $match[$key];
-                    if(strtoupper($key[0]) == $variable[1][0]) {
-                        $replace = ucfirst($replace);
-                    }
-                    return $replace;
-                };
                 foreach($this->target as $key => $value) {
                     if($value instanceof \Closure) {
                         $value = call_user_func($value, $this);
@@ -48,29 +39,7 @@ class Route extends Component {
                     if(!isset($match[$key])) {
                         $match[$key] = $value;
                     }   
-                    $match[$key] = preg_replace_callback('/\:([\w]+)/', $replace, $match[$key]);
-                }
-                return $match;
-            }
-            continue;
-            if(preg_match($regexp, $request->uri->path, $match)) {
-                // CamelCase Controller temp fix.
-                $replace = function($variable) use($match) {
-                    $key = strtolower($variable[1]);
-                    $replace = $match[$key];
-                    if(strtoupper($key[0]) == $variable[1][0]) {
-                        $replace = ucfirst($replace);
-                    }
-                    return $replace;
-                };
-                foreach($this->target as $key => $value) {
-                    if($value instanceof \Closure) {
-                        $value = call_user_func($value, $this);
-                    }
-                    if(!isset($match[$key])) {
-                        $match[$key] = $value;
-                    }   
-                    $match[$key] = preg_replace_callback('/\:([\w]+)/', $replace, $match[$key]);
+                    $match[$key] = $this->replace($match[$key], $match);
                 }
                 return $match;
             }
@@ -125,10 +94,7 @@ class Route extends Component {
                 }
                 $regexp = [];
                 foreach($format as $part => $pattern) {
-                    $replace = function($match) {
-                        return sprintf('(?<%s>[\w]+)', $match[1]);
-                    };
-                    $regexp[$part] = '/^' . preg_replace_callback('/\\\:([\w]+)/', $replace, preg_quote($pattern, '/')) . '$/';
+                    $regexp[$part] = $this->compilePattern($pattern);
                 }
                 $this->regexp[] = $regexp;
             }
@@ -140,5 +106,25 @@ class Route extends Component {
                 }
             }
         }
+    }
+
+    function replace($subject, array $match) {
+        // CamelCase Controller temp fix.
+        $callback = function($variable) use($match) {
+            $key = strtolower($variable[1]);
+            $result = $match[$key];
+            if(strtoupper($key[0]) == $variable[1][0]) {
+                $result = ucfirst($result);
+            }
+            return $result;
+        };
+        return preg_replace_callback('/\:([\w]+)/', $callback, $subject);
+    }
+
+    function compilePattern($pattern) {
+        $callback = function($match) {
+            return sprintf('(?<%s>[\w]+)', $match[1]);
+        };
+        return '/^' . preg_replace_callback('/\\\:([\w]+)/', $callback, preg_quote($pattern, '/')) . '$/';
     }
 }
