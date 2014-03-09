@@ -56,7 +56,7 @@ class Route extends Component {
             return false;
         }
         if($this->target) {
-            $parameters = array_merge($parameters, $this->target);
+            $parameters = array_merge($this->target, $parameters);
         }
         foreach($this->format as $index => $format) {
             $uri = [];
