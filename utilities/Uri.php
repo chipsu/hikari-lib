@@ -44,7 +44,7 @@ class Uri extends Component {
         if($part = $this->host) {
             $result .= $this->host;
         } else {
-            $result .= 'localhost';
+            $result .= $_SERVER['HTTP_HOST'];
         }
         
         if($part = $this->port) {
