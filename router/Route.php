@@ -121,7 +121,7 @@ class Route extends Component {
             }
             return $result;
         };
-        return preg_replace_callback('/\:([\w]+)/', $callback, $subject);
+        return preg_replace_callback('/\:(?<name>[\w]+)(?<type>\([\w]+\)|)/', $callback, $subject);
     }
 
     function compilePattern($pattern) {
