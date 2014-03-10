@@ -56,18 +56,20 @@ class Route extends Component {
             return false;
         }
         if($this->target) {
-            $parameters = array_merge($this->target, $parameters);
+            $parameters = array_merge($this->target, array('controller' => null), $parameters);
         }
         foreach($this->format as $index => $format) {
             $uri = [];
+            $keys = [];
             foreach($format as $part => $pattern) {
-                $uri[$part] = $this->replaceParameters($pattern, $parameters);
+                $uri[$part] = $this->replaceParameters($pattern, $parameters, $keys);
                 if(!preg_match($this->regexp[$index][$part], $uri[$part])) {
                     $uri = false;
                     break;
                 }
             }
             if($uri) {
+                $uri['query'] = array_diff_key($parameters, $keys);
                 return new Uri($uri);
             }
         }
@@ -108,15 +110,18 @@ class Route extends Component {
         }
     }
 
-    function replaceParameters($subject, array $parameters) {
+    function replaceParameters($subject, array $parameters, &$keys = null) {
         // CamelCase Controller temp fix.
-        $callback = function($variable) use($parameters) {
+        $callback = function($variable) use($parameters, &$keys) {
             $key = strtolower($variable[1]);
             $result = false;
             if(isset($parameters[$key])) {
                 $result = $parameters[$key];
                 if(strtoupper($key[0]) == $variable[1][0]) {
                     $result = ucfirst($result);
+                }
+                if($keys !== null) {
+                    $keys[$key] = $key;
                 }
             }
             return $result;

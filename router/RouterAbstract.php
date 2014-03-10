@@ -3,6 +3,7 @@
 namespace hikari\router;
 
 use \hikari\component\Component as Component;
+use \hikari\utilities\Uri as Uri;
 
 abstract class RouterAbstract extends Component implements RouterInterface {
     public $routes = [];
@@ -42,7 +43,9 @@ abstract class RouterAbstract extends Component implements RouterInterface {
                 return $route;
             }
         }
-        return '/?' . http_build_query($parameters);
+        $result = new Uri;
+        $result->query = http_build_query($parameters);
+        return $result;
     }
 }
     

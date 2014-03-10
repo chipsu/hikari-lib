@@ -34,6 +34,9 @@ class Uri extends Component {
         if(!is_array($uri)) {
             \hikari\exception\Argument::raise('Invalid URI "%s"', $uri);
         }
+        if(is_array($uri['query'])) {
+            $uri['query'] = http_build_query($uri['query']);
+        }
         parent::__construct($uri);
     }
         
