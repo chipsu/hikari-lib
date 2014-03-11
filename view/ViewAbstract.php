@@ -13,6 +13,11 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $translator;
     public $router;
 
+    function __construct(array $parameters = []) {
+        parent::__construct($parameters);
+        $this->component('asset');
+    }
+
     function router() {
         return $this->router ?: $this->component('router');
     }
