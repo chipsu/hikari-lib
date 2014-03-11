@@ -14,7 +14,9 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
     function __construct(array $properties = []) {
         parent::__construct($properties);
         if(empty($this->id)) {
-            $this->id = get_class($this);
+            $class = get_class($this);
+            $class = explode('\\', $class);
+            $this->id = strtolower(array_pop($class));
         }
     }
 
@@ -41,7 +43,7 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
 
             if(is_array($this->action->result)) {
                 $this->load('view', ['controller' => $this, 'data' => $this->action->result], ['register' => true]);
-                return $this->view->render($this->action->id . '/' . $this->action->id);
+                return $this->view->render($this->id . '/' . $this->action->id);
             }
             return $this->action->result;
         }
