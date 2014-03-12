@@ -76,4 +76,10 @@ class Asset extends Component {
         // Resize, crop and optimize
         copy($src, $dst);
     }
+
+    function compileCoffeeScript($type, $src, $dst, array $options = []) {
+        $shell = new Shell;
+        $shell->run('coffee', ['-c', '-o', dirname($dst), '--join', basename($dst), $src]) or CompilerException::raise($shell);
+        $shell->result == 0 or CompilerException::raise($shell);
+    }
 }
