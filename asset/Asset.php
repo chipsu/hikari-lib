@@ -1,8 +1,10 @@
 <?php
 
-namespace hikari\utilities;
+namespace hikari\asset;
 
 use \hikari\component\Component;
+use \hikari\system\Shell;
+use \hikari\exception\Exception as CompilerException;
 
 /**
  *
@@ -62,6 +64,11 @@ class Asset extends Component {
     }
 
     function compileSass($type, $src, $dst, array $options = []) {
+        $shell = new Shell;
+        $shell->run('sass', ['-t', 'compressed', $src, $dst]) or CompilerException::raise($shell);
+             var_dump($shell->result);
+        var_dump($shell->output);
+        die;
         copy($src, $dst);
     }
 
