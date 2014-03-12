@@ -39,10 +39,14 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         }
         $buffer = empty($options['direct']);
         if($buffer) {
-            if(!ob_start())
-                \hikari\exception\Core::raise('ob_start failed');
+            ob_start() or \hikari\exception\Core::raise('ob_start failed');
         }
-        $this->includeFile($file);
+        try {
+            $this->includeFile($file);
+        } catch(\Exception $ex) {
+            if($buffer) ob_end_clean();
+            throw $ex;
+        }
         if($buffer) {
             return ob_get_clean();
         }
