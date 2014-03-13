@@ -83,6 +83,12 @@ abstract class ComponentAbstract implements ComponentInterface {
             $this->$name = $result;
         }
 
+        if(isset($options['components'])) {
+            foreach($options['components'] as $name) {
+                $result->component($name);
+            }
+        }
+
         return $result;
     }
 }

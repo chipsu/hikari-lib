@@ -10,20 +10,9 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $layout = 'main';
     public $content;
     public $extension;
-    public $translator;
-    public $router;
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
-        $this->component('asset');
-    }
-
-    function router() {
-        return $this->router ?: $this->component('router');
-    }
-
-    function translator() {
-        return $this->translator ?: $this->component('translator');
     }
 
     function render($name) {
@@ -76,12 +65,17 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function str($key, array $args =  [], $encode = true) {
-        $result = $this->translator()->translate($key);
-        return $encode ? htmlspecialchars($result) : $result;        
+        if(isset($this->translator)) {
+            return $encode ? htmlspecialchars($result) : $result;
+        }
+        return $key;
     }
 
     function url($route = null, array $args = []) {
-        return $this->router()->build($route, $args);
+        if(isset($this->router)) {
+            return $this->router->build($route, $args);
+        }
+        return $route . '?' . http_build_query($args);
     }
 
     protected function includeFile($file) {
