@@ -3,13 +3,11 @@
 namespace hikari\cache;
 
 class Apc extends CacheAbstract {
-    protected $config;
-    protected $ttl;
+    public $ttl;
 
-    function __construct($config = null) {
-        if($config) {
-            $this->ttl = $config->get(['cache', 'apc', 'ttl'], 0);
-        }
+    function __construct(array $parameters = []) {
+        parent::__construct($parameters);
+        $this->ttl = $this->config->get(['cache', 'apc', 'ttl'], 0);
     }
 
     function has($key) {

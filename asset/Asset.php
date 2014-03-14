@@ -25,39 +25,46 @@ class Asset extends Component {
         'json' => ['method' => 'compileJson', 'output' => 'dat'],
     ];
 
+    function __construct(array $parameters = []) {
+        parent::__construct($parameters);
+    }
+
     function url($asset, array $options = []) {
         $id = $asset . json_encode($options);
-        if(!isset($this->compiled[$id])) {
-            $this->compiled[$id] = $this->publish($asset, $options);
+        if(!$this->cache->value($id, $result)) {
+            $result = $this->publish($asset, $options);
+            $this->cache->set($id, $result);
         }
-        return $this->compiled[$id];
+        return $result;
     }
 
     function publish($asset, array $options = []) {
         $path = isset($options['path']) ? $options['path'] : 'asset';
+        $dst = $this->application->publicPath . '/' . $path;
         if(strpos($asset, '://') !== false) {
-            $src = tempnam(sys_get_temp_dir(), 'asset');
-            touch($src);
-            $fp = fopen($src, 'w+');
-            $ch = curl_init(str_replace(' ', '%20', $asset));
-            curl_setopt($ch, CURLOPT_TIMEOUT, 50);
-            curl_setopt($ch, CURLOPT_FILE, $fp);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_exec($ch);
-            curl_close($ch);
-            fclose($fp);
+            $name = sha1($asset);
+            $src = $dst . '/download-' . $name;
+            if(!is_file($src)) {
+                touch($src);
+                $fp = fopen($src, 'w+');
+                $ch = curl_init(str_replace(' ', '%20', $asset));
+                curl_setopt($ch, CURLOPT_TIMEOUT, 50);
+                curl_setopt($ch, CURLOPT_FILE, $fp);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_exec($ch);
+                curl_close($ch);
+                fclose($fp);
+            }
         } else {
             if(empty($options['absolute'])) {
                 $src = $this->application->path . '/asset/' . $asset;
             } else {
                 $src = $asset;
-                $asset = basename($asset);
             }
             is_file($src) or \hikari\exception\NotFound::raise($src);
+            $name = sha1($src);
         }
-        $dst = $this->application->publicPath . '/' . $path;
         $info = pathinfo($src);
-        $name = sha1($src);
         if(isset($options['type'])) {
             $type = $options['type'];
         } else if(isset($info['extension'])) {
@@ -185,7 +192,6 @@ class Asset extends Component {
             foreach($data['files'] as $file) {
                 $content .= file_get_contents($path . '/' . $file);
             }
-            #$dst .= '.' . $data['output'];
             file_put_contents($dst, $content);
             return $this->publish($dst, ['absolute' => true, 'type' => $data['output']]);
         default:
