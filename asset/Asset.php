@@ -24,6 +24,7 @@ class Asset extends Component {
         'image' => ['method' => 'compileImage', 'extensions' => ['jpg', 'jpeg', 'png', 'gif']],
         'json' => ['method' => 'compileJson', 'output' => 'dat'],
     ];
+    public $watch = true;
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
@@ -31,11 +32,29 @@ class Asset extends Component {
 
     function url($asset, array $options = []) {
         $id = $asset . json_encode($options);
-        if(!$this->cache->value($id, $result)) {
-            $result = $this->publish($asset, $options);
-            $this->cache->set($id, $result);
+        if($this->cache->value($id, $result)) {
+            if($this->watch && strpos($asset, '://') === false) {
+                $src = $this->src($asset, $options);
+                $dst = $this->application->publicPath . '/' . $result;
+                if(filemtime(dirname($src)) <= filemtime($dst)) {
+                    return $result;
+                }
+            } else {
+                return $result;
+            }
         }
+        $result = $this->publish($asset, $options);
+        $this->cache->set($id, $result);
         return $result;
+    }
+
+    function src($asset, array $options = []) {
+        if(empty($options['absolute'])) {
+            $src = $this->application->path . '/asset/' . $asset;
+        } else {
+            $src = $asset;
+        }
+        return $src;
     }
 
     function publish($asset, array $options = []) {
@@ -56,11 +75,7 @@ class Asset extends Component {
                 fclose($fp);
             }
         } else {
-            if(empty($options['absolute'])) {
-                $src = $this->application->path . '/asset/' . $asset;
-            } else {
-                $src = $asset;
-            }
+            $src = $this->src($asset, $options);
             is_file($src) or \hikari\exception\NotFound::raise($src);
             $name = sha1($src);
         }
