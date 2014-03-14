@@ -22,6 +22,7 @@ class Asset extends Component {
         'coffee' => ['method' => 'compileCoffeeScript', 'output' => 'js'],
         'js' => ['method' => 'minify'],
         'image' => ['method' => 'compileImage', 'extensions' => ['jpg', 'jpeg', 'png', 'gif']],
+        'json' => ['method' => 'compileJson', 'output' => 'dat'],
     ];
 
     function url($asset, array $options = []) {
@@ -46,7 +47,12 @@ class Asset extends Component {
             curl_close($ch);
             fclose($fp);
         } else {
-            $src = $this->application->path . '/asset/' . $asset;
+            if(empty($options['absolute'])) {
+                $src = $this->application->path . '/asset/' . $asset;
+            } else {
+                $src = $asset;
+                $asset = basename($asset);
+            }
             is_file($src) or \hikari\exception\NotFound::raise($src);
         }
         $dst = $this->application->publicPath . '/' . $path;
@@ -80,8 +86,8 @@ class Asset extends Component {
             isset($compiler['output']) ? $compiler['output'] : $type
         );
         $dst .= '/' . $name;
-        call_user_func($method, $type, $src, $dst, $options);
-        return '/' . $path . '/' . $name;
+        $result = call_user_func($method, $type, $src, $dst, $options);
+        return is_string($result) ? $result : '/' . $path . '/' . $name;
     }
 
     function minify($type, $src, $dst, array $options = []) {
@@ -166,5 +172,24 @@ class Asset extends Component {
         $shell = new Shell;
         $shell->run('coffee', ['-c', '-o', dirname($dst), '--join', basename($dst), $src]) or CompilerException::raise($shell);
         $this->minify('js', $dst, $dst);
+    }
+
+    function compileJson($type, $src, $dst, array $options = []) {
+        $data = file_get_contents($src);
+        $data = json_decode($data, true);
+        json_last_error() and CompilerException::raise('JSON decode error in "%s": %s', $src, json_last_error_msg());
+        switch($data['mode']) {
+        case 'chain':
+            $path = dirname($src);
+            $content = '';
+            foreach($data['files'] as $file) {
+                $content .= file_get_contents($path . '/' . $file);
+            }
+            #$dst .= '.' . $data['output'];
+            file_put_contents($dst, $content);
+            return $this->publish($dst, ['absolute' => true, 'type' => $data['output']]);
+        default:
+            NotSupported::raise($data->mode);
+        }
     }
 }
