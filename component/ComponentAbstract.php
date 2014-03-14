@@ -21,6 +21,9 @@ abstract class ComponentAbstract implements ComponentInterface {
         }
     }
 
+    function initialize() {
+    }
+
     /**
      * Link a known component into this object.
      */
@@ -72,8 +75,17 @@ abstract class ComponentAbstract implements ComponentInterface {
                 }
             }
             $result = new $class($properties);
-            if($options['shared'])
-                static::$components[$name] = $result;   
+            if($options['shared']) {
+                static::$components[$name] = $result;
+            }
+            if(isset($options['components'])) {
+                foreach($options['components'] as $name) {
+                    $result->component($name);
+                }
+            }
+            if($result instanceof ComponentInterface) {
+                $result->initialize();
+            }
         }
 
         if($options['register']) {
@@ -81,12 +93,6 @@ abstract class ComponentAbstract implements ComponentInterface {
             if(isset($this->$name))
                 \hikari\exception\Core::raise('Property "%s" is already set', $name);
             $this->$name = $result;
-        }
-
-        if(isset($options['components'])) {
-            foreach($options['components'] as $name) {
-                $result->component($name);
-            }
         }
 
         return $result;

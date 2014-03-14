@@ -7,21 +7,31 @@ use \hikari\utilities\Uri as Uri;
 
 abstract class RouterAbstract extends Component implements RouterInterface {
     public $routes = [];
+    public $cache;
 
-    function __construct(array $properties = []) {
-        parent::__construct($properties);
-        if($this->application->config->hash) {
-            // TODO: Cache
-        }
-        foreach($this->routes as $name => $route) {
-            if(!$route instanceof Route) {
-                empty($route['name']) and $route['name'] = $name;
-                $this->routes[$name] = new Route($route);
+    function initialize() {
+        if($this->cache && $this->cache->value([$this->application->config->hash, __METHOD__], $routes)) {
+            $this->routes = $routes;
+        } else {
+            foreach($this->routes as $name => $route) {
+                if(!$route instanceof Route) {
+                    empty($route['name']) and $route['name'] = $name;
+                    $this->routes[$name] = new Route($route);
+                }
+            }
+            if($this->cache) {
+                $this->cache->set([$this->application->config->hash, __METHOD__], $this->routes);
             }
         }
     }
 
     function route($request) {
+        if($this->cache) {
+            $cacheKey = [__METHOD__, $request];
+            if($this->cache->value($cacheKey, $result)) {
+                return $result;
+            }   
+        }
         foreach($this->routes as $route) {
             if($match = $route->match($request)) {
                 $result = clone $request;
@@ -31,6 +41,7 @@ abstract class RouterAbstract extends Component implements RouterInterface {
                     $request = $result;
                     continue;
                 }
+                $cacheKey and $this->cache->set($cacheKey, $result);
                 return $result;
             }
         }
@@ -38,6 +49,12 @@ abstract class RouterAbstract extends Component implements RouterInterface {
     }
     
     function build($name, array $parameters = []) {
+        if($this->cache) {
+            $cacheKey = [__METHOD__, $name, json_encode($parameters)];
+            if($this->cache->value($cacheKey, $result)) {
+                return $result;
+            }
+        }
         foreach($this->routes as $route) {
             if($route = $route->build($name ?: 'default', $parameters)) {
                 return $route;
@@ -45,6 +62,9 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         }
         $result = new Uri;
         $result->query = http_build_query($parameters);
+        if($this->cache) {
+            $this->cache->set($cacheKey, $result);
+        }
         return $result;
     }
 }
