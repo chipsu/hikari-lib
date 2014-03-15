@@ -22,6 +22,9 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
         }
         $this->path = $properties['path'];
         unset($properties['path']);
+        if(is_file($this->path . '/autoload.php')) {
+            require($this->path . '/autoload.php');
+        }
         if(empty($properties['config'])) {
             $configFile = empty($properties['configFile']) ? $this->path . '/config/main.php' : $properties['configFile'];
             if(is_file($configFile)) {
