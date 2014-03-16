@@ -57,6 +57,9 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         }
         foreach($this->routes as $route) {
             if($route = $route->build($name ?: 'default', $parameters)) {
+                if($this->cache) {
+                    $this->cache->set($cacheKey, $result);
+                }
                 return $route;
             }
         }

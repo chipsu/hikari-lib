@@ -70,6 +70,11 @@ class Route extends Component {
             }
             if($uri) {
                 $uri['query'] = array_diff_key($parameters, $keys);
+                foreach($this->target as $key => $value) {
+                    if(isset($uri['query'][$key]) && strcmp($uri['query'][$key], $value) == 0) {
+                        unset($uri['query'][$key]);
+                    }
+                }
                 return new Uri($uri);
             }
         }
