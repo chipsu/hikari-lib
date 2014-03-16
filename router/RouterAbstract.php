@@ -50,17 +50,17 @@ abstract class RouterAbstract extends Component implements RouterInterface {
     
     function build($name, array $parameters = []) {
         if($this->cache) {
-            $cacheKey = [__METHOD__, $name, json_encode($parameters)];
+            $cacheKey = [$this->application->config->hash, __METHOD__, $name, json_encode($parameters)];
             if($this->cache->value($cacheKey, $result)) {
                 return $result;
             }
         }
         foreach($this->routes as $route) {
-            if($route = $route->build($name ?: 'default', $parameters)) {
+            if($result = $route->build($name ?: 'default', $parameters)) {
                 if($this->cache) {
                     $this->cache->set($cacheKey, $result);
                 }
-                return $route;
+                return $result;
             }
         }
         $result = new Uri;
