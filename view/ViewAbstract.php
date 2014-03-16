@@ -78,7 +78,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $route . '?' . http_build_query($args);
     }
 
-    protected function includeFile($file) {
+    protected function includeFile(/* $file */) {
         extract($this->data);
         require(func_get_arg(0));
     }
