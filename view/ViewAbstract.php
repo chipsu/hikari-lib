@@ -20,6 +20,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         if(empty($this->paths)) {
             $this->paths[] = $this->application->path;
         }
+        parent::initialize();
     }
 
     function render($name) {
