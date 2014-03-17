@@ -10,9 +10,16 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $layout = 'main';
     public $content;
     public $extension;
+    public $paths = [];
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
+    }
+
+    function initialize() {
+        if(empty($this->paths)) {
+            $this->paths[] = $this->application->path;
+        }
     }
 
     function render($name) {
@@ -21,11 +28,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function partial($name, array $options = ['direct' => false]) {
-        // FIXME: hardcoded path
-        $file = $this->application->path . '/' . $name . '.' . $this->extension;
-        if(!is_file($file)) {
-            \hikari\exception\NotFound::raise('Could not find view file "%s"', $file);
-        }
+        $file = $this->locate($name);
         $buffer = empty($options['direct']);
         if($buffer) {
             ob_start() or \hikari\exception\Core::raise('ob_start failed');
@@ -39,6 +42,16 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         if($buffer) {
             return ob_get_clean();
         }
+    }
+
+    function locate($name) {
+        foreach($this->paths as $path) {
+            $file = $path . '/' . $name . '.' . $this->extension;
+            if(is_file($file)) {
+                return $file;
+            }
+        }
+        \hikari\exception\NotFound::raise('Could not find view file "%s" in [%s]', $name, $this->paths);
     }
 
     function encode($string) {

@@ -13,6 +13,13 @@ class Exception extends \Exception {
             $message = $class;
         } else {
             $format = array_shift($args);
+            foreach($args as &$arg) {
+                if(is_object($arg)) {
+                    $arg = (string)$arg;
+                } else if(is_array($arg)) {
+                    $arg = var_export($arg, true);
+                }
+            }
             $message = vsprintf($format, $args);
         }
         throw new $class($message, $code, $previous);
