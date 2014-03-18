@@ -214,6 +214,11 @@ class Asset extends Component {
         $data = file_get_contents($src);
         $data = json_decode($data, true);
         json_last_error() and CompilerException::raise('JSON decode error in "%s": %s', $src, json_last_error_msg());
+        if(isset($data['dependencies'])) {
+            foreach($data['dependencies'] as $dependency) {
+                // TODO: build $dependency
+            }
+        }
         switch($data['mode']) {
         case 'chain':
             $path = dirname($src);
