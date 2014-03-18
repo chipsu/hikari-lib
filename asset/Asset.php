@@ -227,16 +227,19 @@ class Asset extends Component {
                 $content .= file_get_contents($path . '/' . $file);
             }
             file_put_contents($dst, $content);
-            $name = ltrim(substr($src, strlen($this->assetPath)), '/');
+            $name = $this->getAbsoluteAssetName($src);
             $name = $this->trimExtension($name);
             return $this->publish($dst, ['absolute' => true, 'type' => $data['output'], 'name' => $name]);
         case 'compile':
-            $fileSrc = dirname($src) . '/' . $data['source'];
-            $fileSrc = ltrim(substr($fileSrc, strlen($this->assetPath)), '/');
-            return $this->publish($fileSrc);
+            $src = $this->getAbsoluteAssetName(dirname($src) . '/' . $data['source']);
+            return $this->publish($src);
         default:
             NotSupported::raise($data->mode);
         }
+    }
+
+    function getAbsoluteAssetName($src) {
+        return ltrim(substr($src, strlen($this->assetPath)), '/');
     }
 
     function trimExtension($filename) {
