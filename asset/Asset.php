@@ -25,6 +25,7 @@ class Asset extends Component {
         'js' => ['method' => 'minify'],
         'image' => ['method' => 'compileImage', 'extensions' => ['jpg', 'jpeg', 'png', 'gif']],
         'json' => ['method' => 'compileJson', 'output' => 'dat'],
+        'font' => ['method' => 'copyFile', 'extensions' => ['eot', 'woff', 'ttf', 'svg']],
     ];
     public $watch = true;
     public $assetPath;
@@ -126,6 +127,10 @@ class Asset extends Component {
         return is_string($result) ? $result : '/' . $path . '/' . $name;
     }
 
+    function copyFile($type, $src, $dst, array $options = []) {
+        copy($src, $dst) or CompilerException::raise('Could not copy file "%s" to "%s"', $src, $dst);
+    }
+
     function minify($type, $src, $dst, array $options = []) {
         $shell = new Shell;
         switch($type) {
@@ -211,20 +216,20 @@ class Asset extends Component {
     }
 
     function compileJson($type, $src, $dst, array $options = []) {
+        $path = dirname($src);
         $data = file_get_contents($src);
         $data = json_decode($data, true);
         json_last_error() and CompilerException::raise('JSON decode error in "%s": %s', $src, json_last_error_msg());
         if(isset($data['dependencies'])) {
-            foreach($data['dependencies'] as $dependency) {
+            foreach($this->expandFileList($data['dependencies'], $path) as $dependency) {
                 // TODO: build $dependency
             }
         }
         switch($data['mode']) {
         case 'chain':
-            $path = dirname($src);
             $content = '';
-            foreach($data['files'] as $file) {
-                $content .= file_get_contents($path . '/' . $file);
+            foreach($this->expandFileList($data['files'], $path) as $file) {
+                $content .= file_get_contents($file);
             }
             file_put_contents($dst, $content);
             $name = $this->getAbsoluteAssetName($src);
@@ -236,6 +241,20 @@ class Asset extends Component {
         default:
             NotSupported::raise($data->mode);
         }
+    }
+
+    function expandFileList(array $files, $path) {
+        $result = [];
+        foreach($files as $file) {
+            if(strpos($file, '*') === false) {
+                $result[] = $path . '/' . $file;
+            } else {
+                foreach(glob($path . '/' . $file, GLOB_BRACE) as $f) {
+                    $result[] = $f;
+                }
+            }
+        }
+        return $result;
     }
 
     function getAbsoluteAssetName($src) {
