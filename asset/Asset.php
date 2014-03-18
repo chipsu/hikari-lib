@@ -4,8 +4,10 @@ namespace hikari\asset;
 
 use \hikari\component\Component;
 use \hikari\system\Shell;
+use \hikari\exception\Exception;
 use \hikari\exception\Exception as CompilerException;
 use \hikari\exception\NotSupported;
+use \hikari\exception\NotFound;
 
 /**
  *
@@ -25,9 +27,17 @@ class Asset extends Component {
         'json' => ['method' => 'compileJson', 'output' => 'dat'],
     ];
     public $watch = true;
+    public $assetPath;
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
+    }
+
+    function initialize() {
+        if(empty($this->assetPath)) {
+            $this->assetPath = $this->application->path . '/asset';
+        }
+        parent::initialize();
     }
 
     function url($asset, array $options = []) {
@@ -36,7 +46,7 @@ class Asset extends Component {
             if($this->watch && strpos($asset, '://') === false) {
                 $src = $this->src($asset, $options);
                 $dst = $this->application->publicPath . '/' . $result;
-                if(filemtime(dirname($src)) <= filemtime($dst)) {
+                if(is_file($dst) && filemtime(dirname($src)) <= filemtime($dst)) {
                     return $result;
                 }
             } else {
@@ -50,7 +60,7 @@ class Asset extends Component {
 
     function src($asset, array $options = []) {
         if(empty($options['absolute'])) {
-            $src = $this->application->path . '/asset/' . $asset;
+            $src = $this->assetPath . '/' . $asset;
         } else {
             $src = $asset;
         }
@@ -61,7 +71,7 @@ class Asset extends Component {
         $path = isset($options['path']) ? $options['path'] : 'asset';
         $dst = $this->application->publicPath . '/' . $path;
         if(strpos($asset, '://') !== false) {
-            $name = sha1($asset);
+            $name = isset($options['name']) ? $options['name'] : sha1($asset);
             $src = $dst . '/download-' . $name;
             if(!is_file($src)) {
                 touch($src);
@@ -76,8 +86,16 @@ class Asset extends Component {
             }
         } else {
             $src = $this->src($asset, $options);
-            is_file($src) or \hikari\exception\NotFound::raise($src);
-            $name = sha1($src);
+            is_file($src) or NotFound::raise($src);
+            if(isset($options['name'])) {
+                $name = $options['name'];
+            } else {
+                $info = pathinfo($asset);
+                $name = $info['filename'];
+                if(!empty($info['dirname']) && $info['dirname'] != '.') {
+                    $name = $info['dirname'] . '/' . $name;
+                }
+            }
         }
         $info = pathinfo($src);
         if(isset($options['type'])) {
@@ -108,6 +126,10 @@ class Asset extends Component {
             isset($compiler['output']) ? $compiler['output'] : $type
         );
         $dst .= '/' . $name;
+        $dir = dirname($dst);
+        if(!is_dir($dir)) {
+            mkdir($dir, 0755, true) or Exception::raise('Could not create directory "%s"', $dir);
+        }
         $result = call_user_func($method, $type, $src, $dst, $options);
         return is_string($result) ? $result : '/' . $path . '/' . $name;
     }
@@ -208,7 +230,8 @@ class Asset extends Component {
                 $content .= file_get_contents($path . '/' . $file);
             }
             file_put_contents($dst, $content);
-            return $this->publish($dst, ['absolute' => true, 'type' => $data['output']]);
+            $name = ltrim(substr($src, strlen($this->assetPath)), '/');
+            return $this->publish($dst, ['absolute' => true, 'type' => $data['output'], 'name' => $name]);
         default:
             NotSupported::raise($data->mode);
         }
