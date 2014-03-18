@@ -87,15 +87,7 @@ class Asset extends Component {
         } else {
             $src = $this->src($asset, $options);
             is_file($src) or NotFound::raise($src);
-            if(isset($options['name'])) {
-                $name = $options['name'];
-            } else {
-                $info = pathinfo($asset);
-                $name = $info['filename'];
-                if(!empty($info['dirname']) && $info['dirname'] != '.') {
-                    $name = $info['dirname'] . '/' . $name;
-                }
-            }
+            $name = $this->trimExtension(isset($options['name']) ? $options['name'] : $asset);
         }
         $info = pathinfo($src);
         if(isset($options['type'])) {
@@ -231,9 +223,21 @@ class Asset extends Component {
             }
             file_put_contents($dst, $content);
             $name = ltrim(substr($src, strlen($this->assetPath)), '/');
+            $name = $this->trimExtension($name);
             return $this->publish($dst, ['absolute' => true, 'type' => $data['output'], 'name' => $name]);
+        case 'compile':
+            $fileSrc = dirname($src) . '/' . $data['source'];
+            $fileSrc = ltrim(substr($fileSrc, strlen($this->assetPath)), '/');
+            return $this->publish($fileSrc);
         default:
             NotSupported::raise($data->mode);
         }
+    }
+
+    function trimExtension($filename) {
+        $info = pathinfo($filename);
+        return !empty($info['dirname']) && $info['dirname'] != '.'
+            ? $info['dirname'] . '/' . $info['filename']
+            : $info['filename'];
     }
 }
