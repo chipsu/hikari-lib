@@ -29,11 +29,11 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function view($name) {
-        return $this->internal('view/' . $name);
+        return $this->template('view/' . $name);
     }
 
     function layout($name) {
-        return $this->internal('layout/' . $name);
+        return $this->template('layout/' . $name);
     }
 
     function template($name, array $options = ['direct' => false]) {
