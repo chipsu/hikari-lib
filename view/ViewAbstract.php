@@ -24,11 +24,19 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function render($name) {
-        $this->content = $this->partial('view/' . $name);
-        return $this->partial('layout/' . $this->layout);
+        $this->content = $this->view($name);
+        return $this->layout($this->layout);
     }
 
-    function partial($name, array $options = ['direct' => false]) {
+    function view($name) {
+        return $this->internal('view/' . $name);
+    }
+
+    function layout($name) {
+        return $this->internal('layout/' . $name);
+    }
+
+    function template($name, array $options = ['direct' => false]) {
         $file = $this->locate($name);
         $buffer = empty($options['direct']);
         if($buffer) {
