@@ -12,4 +12,9 @@ class File {
         return $file;
     }
 
+    static function ensureDirectoryExists($dir, $parent = true) {
+        if(!is_dir($dir)) {
+            mkdir($dir, 0755, $parent) or \hikari\exception\Core::raise('Could not create directory "%s"', $dir);
+        }
+    }
 }

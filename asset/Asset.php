@@ -44,13 +44,13 @@ class Asset extends Component {
     function url($asset, array $options = []) {
         $id = $asset . json_encode($options);
         if($this->cache->value($id, $result)) {
+            $dst = $this->application->publicPath . '/' . $result;
             if($this->watch && strpos($asset, '://') === false) {
                 $src = $this->src($asset, $options);
-                $dst = $this->application->publicPath . '/' . $result;
                 if(is_file($dst) && filemtime(dirname($src)) <= filemtime($dst)) {
                     return $result;
                 }
-            } else {
+            } else if(is_file($dst)) {
                 return $result;
             }
         }
@@ -72,9 +72,11 @@ class Asset extends Component {
         $path = isset($options['path']) ? $options['path'] : 'asset';
         $dst = $this->application->publicPath . '/' . $path;
         if(strpos($asset, '://') !== false) {
-            $name = isset($options['name']) ? $options['name'] : sha1($asset);
-            $src = $dst . '/download-' . $name;
+            $name = isset($options['name']) ? $options['name'] : 'download-' . sha1($asset);
+            $src = $dst . '/' . $name;
+            $name = $this->trimExtension($name);
             if(!is_file($src)) {
+                \hikari\utilities\File::ensureDirectoryExists(dirname($src));
                 touch($src);
                 $fp = fopen($src, 'w+');
                 $ch = curl_init(str_replace(' ', '%20', $asset));
@@ -119,10 +121,7 @@ class Asset extends Component {
             isset($compiler['output']) ? $compiler['output'] : $type
         );
         $dst .= '/' . $name;
-        $dir = dirname($dst);
-        if(!is_dir($dir)) {
-            mkdir($dir, 0755, true) or Exception::raise('Could not create directory "%s"', $dir);
-        }
+        \hikari\utilities\File::ensureDirectoryExists(dirname($dst));
         $result = call_user_func($method, $type, $src, $dst, $options);
         return is_string($result) ? $result : '/' . $path . '/' . $name;
     }
