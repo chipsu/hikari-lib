@@ -37,7 +37,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function template($name, array $options = ['direct' => false]) {
-        $file = $this->locate($name);
+        $file = $this->find($name);
         $buffer = empty($options['direct']);
         if($buffer) {
             ob_start() or \hikari\exception\Core::raise('ob_start failed');
@@ -53,7 +53,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         }
     }
 
-    function locate($name) {
+    function find($name) {
         foreach($this->paths as $path) {
             $file = $path . '/' . $name . '.' . $this->extension;
             if(is_file($file)) {
