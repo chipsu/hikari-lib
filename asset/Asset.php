@@ -28,6 +28,7 @@ class Asset extends Component {
         'font' => ['method' => 'copyFile', 'extensions' => ['eot', 'woff', 'ttf', 'svg']],
     ];
     public $watch = true;
+    public $debug = true;
     public $assetPath;
 
     function __construct(array $parameters = []) {
@@ -211,7 +212,9 @@ class Asset extends Component {
     function compileCoffeeScript($type, $src, $dst, array $options = []) {
         $shell = new Shell;
         $shell->run('coffee', ['-c', '-o', dirname($dst), '--join', basename($dst), $src]) or CompilerException::raise($shell);
-        $this->minify('js', $dst, $dst);
+        if(!$this->debug) {
+            $this->minify('js', $dst, $dst);
+        }
     }
 
     function compileJson($type, $src, $dst, array $options = []) {
