@@ -9,7 +9,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $data;
     public $layout = 'main';
     public $content;
-    public $extension;
+    public $extensions;
     public $paths = [];
 
     function __construct(array $parameters = []) {
@@ -38,6 +38,14 @@ abstract class ViewAbstract extends Component implements ViewInterface {
 
     function template($name, array $options = ['direct' => false]) {
         $file = $this->find($name);
+        if(strpos($file, '.haml') !== false) {
+            require_once $this->application->path . '/../lib/haml-php/src/HamlPHP/HamlPHP.php';
+            require_once $this->application->path . '/../lib/haml-php/src/HamlPHP/Storage/FileStorage.php';
+            \HamlPHP::$Config['escape_html_default'] = true;
+            $parser = new \HamlPHP(new \FileStorage($this->application->path . '/runtime'));
+            $content = $parser->parseFile($file);
+            return $parser->evaluate($content, $this->data);
+        }
         $buffer = empty($options['direct']);
         if($buffer) {
             ob_start() or \hikari\exception\Core::raise('ob_start failed');
@@ -55,9 +63,11 @@ abstract class ViewAbstract extends Component implements ViewInterface {
 
     function find($name) {
         foreach($this->paths as $path) {
-            $file = $path . '/' . $name . '.' . $this->extension;
-            if(is_file($file)) {
-                return $file;
+            foreach($this->extensions as $extension) {
+                $file = $path . '/' . $name . '.' . $extension;
+                if(is_file($file)) {
+                    return $file;
+                }
             }
         }
         \hikari\exception\NotFound::raise('Could not find view file "%s" in [%s]', $name, $this->paths);
