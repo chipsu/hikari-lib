@@ -38,7 +38,15 @@ abstract class ViewAbstract extends Component implements ViewInterface {
 
     function template($name, array $options = ['direct' => false]) {
         $file = $this->find($name);
-        if(strpos($file, '.haml') !== false) {
+        if(strpos($file, '.htpl') !== false) {
+            $htpl = new HtplCompiler;
+            $json = $htpl->compileFile($file);
+            $jtpl = new JtplCompiler;
+            $code = $jtpl->compile($json);
+            $temp = '/tmp/template-test.php';
+            file_put_contents($temp, $code);
+            $file = $temp;
+        } else if(strpos($file, '.haml') !== false) {
             require_once $this->application->path . '/../lib/haml-php/src/HamlPHP/HamlPHP.php';
             require_once $this->application->path . '/../lib/haml-php/src/HamlPHP/Storage/FileStorage.php';
             \HamlPHP::$Config['escape_html_default'] = true;
