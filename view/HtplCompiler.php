@@ -33,6 +33,48 @@ class HtplCompiler extends CompilerAbstract {
 
 }
 
+abstract class JtplNode {
+    public $node;
+    public $code;
+    function __construct(array $node) {
+        $this->node = $node;
+    }
+    function code() {
+        if($this->code === null) {
+            $this->code = [];
+            $this->build();
+        }
+        return $this->code;
+    }
+    function toPhp() {
+        return implode(PHP_EOL, $this->code());
+    }
+    function phpOpen() {
+        $this->code[] = '<?php';
+    }
+    function phpClose() {
+        $this->code[] = '?>';
+    }
+    function push($code) {
+        if(func_num_args() > 1) {
+            $code = call_user_func_array('sprintf', func_get_args());
+        }
+        $this->code[] = $code;
+    }
+    abstract function build();
+}
+
+class JtplDataNode extends JtplNode {
+    function build() {
+        $this->phpOpen();
+        foreach($this->node['value'] as $k => $v) {
+            $this->push('${%s} = %s;', var_export($k, true), var_export($v, true));
+        }
+        $this->phpClose();
+    }
+}
+
+
 // foreach($items as $i) =>
 // php: same
 // js: for(k in $items) { $i = $items[$k]; }
@@ -45,11 +87,8 @@ class JtplCompiler extends CompilerAbstract {
         foreach($data as $key => $value) {
             $type = isset($value['type']) ? $value['type'] : null;
             if($type == 'data') {
-                $result[] = '<?php';
-                foreach($value['value'] as $k => $v) {
-                    $result[] = sprintf('${%s} = %s;', var_export($k, true), var_export($v, true));
-                }
-                $result[] = '?>';
+                $node = new JtplDataNode($value);
+                $result += $node->code();
                 continue;
             }
             $tag = isset($value['tag']) ? $value['tag'] : null;
