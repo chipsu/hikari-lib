@@ -2,15 +2,21 @@
 
 namespace hikari\view;
 
-class HtplCompiler {
+interface CompilerInterface {
+    function file($fileName, array $options = []);
+    function source($source, array $options = []);
+}
 
-    function compileFile($fileName) {
+abstract class CompilerAbstract implements CompilerInterface {
+    function file($fileName, array $options = []) {
         $source = file_get_contents($fileName);
-        return $this->compile($source);
+        return $this->source($source, $options);
     }
+}
 
-    function compile($source) {
-        return json_encode([
+class HtplCompiler extends CompilerAbstract {
+    function source($source, array $options = []) {
+        return [
             ['type' => 'data', 'value' => ['title' => 'Default title', 'items' => ['hello', 'world']]],
             ['tag' => 'h1', 'attr' => ['class' => 'header'], 'content' => '<u>Title: $("title")</u>'],
             ['tag' => 'pre', 'content' => 'Content'],
@@ -22,7 +28,7 @@ class HtplCompiler {
                     ['tag' => 'li', 'content' => 'Item: @($i,"<b>test</b>")'],
                 ]],
             ]],
-        ]);
+        ];
     }
 
 }
@@ -31,9 +37,8 @@ class HtplCompiler {
 // php: same
 // js: for(k in $items) { $i = $items[$k]; }
 // todo: string concat how?
-class JtplCompiler {
-
-    function compile($source) {
+class JtplCompiler extends CompilerAbstract {
+    function source($source, array $options = []) {
         $result = [];
         $data = is_array($source) ? $source : json_decode($source, true);
         $html = new \hikari\html\Html;
@@ -56,7 +61,7 @@ class JtplCompiler {
                 $result[] = $html->open($tag, $attr);
             }
             if(isset($value['children'])) {
-                $result[] = $this->compile($value['children']);
+                $result[] = $this->source($value['children'], $options);
             } else if($content !== null) {
                 $result[] = $this->interpolate($content);
             }

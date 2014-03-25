@@ -40,9 +40,9 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         $file = $this->find($name);
         if(strpos($file, '.htpl') !== false) {
             $htpl = new HtplCompiler;
-            $json = $htpl->compileFile($file);
+            $json = $htpl->file($file);
             $jtpl = new JtplCompiler;
-            $code = $jtpl->compile($json);
+            $code = $jtpl->source($json);
             $temp = '/tmp/template-test.php';
             file_put_contents($temp, $code);
             $file = $temp;
