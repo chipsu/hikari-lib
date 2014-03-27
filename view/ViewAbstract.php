@@ -6,11 +6,20 @@ use \hikari\component\Component;
 
 abstract class ViewAbstract extends Component implements ViewInterface {
     public $controller;
+    public $cache;
     public $data;
     public $layout = 'main';
     public $content;
     public $extensions;
     public $paths = [];
+    public $storage;
+    public $compilers = [
+        'htpl' => '\hikari\view\compiler\HtplCompiler',
+        'haml' => '\hikari\view\compiler\HamlCompiler',
+    ];
+    public $executable = [
+        'php', 'phtml',
+    ];
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
@@ -19,6 +28,13 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     function initialize() {
         if(empty($this->paths)) {
             $this->paths[] = $this->application->path;
+        }
+        if(empty($this->extensions)) {
+
+        }
+        if(empty($this->storage)) {
+            $this->storage = $this->application->runtimePath . '/views';
+            is_dir($this->storage) or mkdir($this->storage, 0755, true);
         }
         parent::initialize();
     }
@@ -37,22 +53,18 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function template($name, array $options = ['direct' => false]) {
-        $file = $this->find($name);
-        if(strpos($file, '.htpl') !== false) {
-            $htpl = new HtplCompiler;
-            $json = $htpl->file($file);
-            $jtpl = new JtplCompiler;
-            $code = $jtpl->source($json);
-            $temp = '/tmp/template-test.php';
-            file_put_contents($temp, $code);
-            $file = $temp;
-        } else if(strpos($file, '.haml') !== false) {
-            require_once $this->application->path . '/../lib/haml-php/src/HamlPHP/HamlPHP.php';
-            require_once $this->application->path . '/../lib/haml-php/src/HamlPHP/Storage/FileStorage.php';
-            \HamlPHP::$Config['escape_html_default'] = true;
-            $parser = new \HamlPHP(new \FileStorage($this->application->path . '/runtime'));
-            $content = $parser->parseFile($file);
-            return $parser->evaluate($content, $this->data);
+        if(!$this->cache || !$this->cache->value([__FILE__, $name], $file)) {
+            $file = $this->find($name);
+            $type = pathinfo($file, PATHINFO_EXTENSION);
+            if(!in_array($type, $this->executable)) {
+                $compiler = new $this->compilers[$type];
+                $result = $compiler->file($file);
+                $file = $this->storage . '/' . sha1($file) . '.php';
+                $compiler->store($file, $result);
+            }
+            if($this->cache) {
+                $this->cache->set([__FILE__, $name], $file);
+            }
         }
         $buffer = empty($options['direct']);
         if($buffer) {

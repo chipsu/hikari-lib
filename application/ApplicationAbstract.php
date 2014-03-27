@@ -11,6 +11,7 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
     public $configHash;
     public $path;
     public $publicPath;
+    public $runtimePath;
 
     function __construct(array $properties = array()) {
         $this->application = $this;
@@ -34,6 +35,9 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
             }
         }
         parent::__construct($properties);
+        if(empty($this->runtimePath)) {
+            $this->runtimePath = $this->path . '/runtime';
+        }
     }
     
     public abstract function run();

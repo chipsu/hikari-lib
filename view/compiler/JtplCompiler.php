@@ -1,37 +1,6 @@
 <?php
 
-namespace hikari\view;
-
-interface CompilerInterface {
-    function file($fileName, array $options = []);
-    function source($source, array $options = []);
-}
-
-abstract class CompilerAbstract implements CompilerInterface {
-    function file($fileName, array $options = []) {
-        $source = file_get_contents($fileName);
-        return $this->source($source, $options);
-    }
-}
-
-class HtplCompiler extends CompilerAbstract {
-    function source($source, array $options = []) {
-        return [
-            ['type' => 'data', 'value' => ['title' => 'Default title', 'items' => ['hello', 'world']]],
-            ['tag' => 'h1', 'attr' => ['class' => 'header'], 'content' => '<u>Title: $("title")</u>'],
-            ['tag' => 'pre', 'content' => 'Content'],
-            ['tag' => 'ul', 'children' => [
-                ['type' => 'statement', 'statement' => 'for($i=0; $i<5; ++$i)', 'children' =>  [
-                    ['tag' => 'li', 'content' => '$i'],
-                ]],
-                ['type' => 'statement', 'statement' => 'foreach($items as $i)', 'children' =>  [
-                    ['tag' => 'li', 'content' => 'Item: @($i,"<b>test</b>")'],
-                ]],
-            ]],
-        ];
-    }
-
-}
+namespace hikari\view\compiler;
 
 abstract class JtplNode {
     public $data;
@@ -82,7 +51,7 @@ abstract class JtplNode {
         if(isset($this->data['children'])) {
             foreach($this->data['children'] as $data) {
                 $type = isset($data['type']) ? $data['type'] : 'tag';
-                $class = '\hikari\view\Jtpl' . ucfirst($type) . 'Node';
+                $class = __NAMESPACE__ . '\Jtpl' . ucfirst($type) . 'Node';
                 $node = new $class($this->context, $data);
                 $this->push($node->code());
             }
