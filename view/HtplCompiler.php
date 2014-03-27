@@ -21,10 +21,10 @@ class HtplCompiler extends CompilerAbstract {
             ['tag' => 'h1', 'attr' => ['class' => 'header'], 'content' => '<u>Title: $("title")</u>'],
             ['tag' => 'pre', 'content' => 'Content'],
             ['tag' => 'ul', 'children' => [
-                ['expression' => 'for($i=0; $i<5; ++$i)', 'children' =>  [
+                ['type' => 'statement', 'statement' => 'for($i=0; $i<5; ++$i)', 'children' =>  [
                     ['tag' => 'li', 'content' => '$i'],
                 ]],
-                ['expression' => 'foreach($items as $i)', 'children' =>  [
+                ['type' => 'statement', 'statement' => 'foreach($items as $i)', 'children' =>  [
                     ['tag' => 'li', 'content' => 'Item: @($i,"<b>test</b>")'],
                 ]],
             ]],
@@ -34,10 +34,22 @@ class HtplCompiler extends CompilerAbstract {
 }
 
 abstract class JtplNode {
-    public $node;
+    public $data;
     public $code;
-    function __construct(array $node) {
-        $this->node = $node;
+    public $context;
+    public static $html;
+    function __construct($context, array $data) {
+        $this->context = $context;
+        $this->data = $data;
+    }
+    function get($key, $default = null) {
+        return isset($this->data[$key]) ? $this->data[$key] : $default;
+    }
+    function html() {
+        if(!static::$html) {
+            static::$html = new \hikari\html\Html;
+        }
+        return static::$html;
     }
     function code() {
         if($this->code === null) {
@@ -47,7 +59,12 @@ abstract class JtplNode {
         return $this->code;
     }
     function toPhp() {
-        return implode(PHP_EOL, $this->code());
+        $result = [];
+        $code = $this->code();
+        array_walk_recursive($code, function($item) use(&$result) {
+            $result[] = $item;
+        }); 
+        return implode(PHP_EOL, $result);
     }
     function phpOpen() {
         $this->code[] = '<?php';
@@ -61,16 +78,57 @@ abstract class JtplNode {
         }
         $this->code[] = $code;
     }
+    function buildChildren() {
+        if(isset($this->data['children'])) {
+            foreach($this->data['children'] as $data) {
+                $type = isset($data['type']) ? $data['type'] : 'tag';
+                $class = '\hikari\view\Jtpl' . ucfirst($type) . 'Node';
+                $node = new $class($this->context, $data);
+                $this->push($node->code());
+            }
+        }
+    }
     abstract function build();
+}
+
+class JtplRootNode extends JtplNode {
+    function build() {
+        $this->buildChildren();
+    }
+}
+
+class JtplTagNode extends JtplNode {
+    function build() {
+        $html = $this->html();
+        $tag = $this->get('tag');
+        $attr = $this->get('attr', []);
+        $content = $this->get('content');
+        $this->push($html->open($tag, $attr));
+        if($content !== null) {
+            $content = $this->context->interpolate($content);
+            $this->push($content);
+        } else {
+            $this->buildChildren();
+        }
+        $this->push($html->close($tag));
+    }
 }
 
 class JtplDataNode extends JtplNode {
     function build() {
         $this->phpOpen();
-        foreach($this->node['value'] as $k => $v) {
+        foreach($this->get('value', []) as $k => $v) {
             $this->push('${%s} = %s;', var_export($k, true), var_export($v, true));
         }
         $this->phpClose();
+    }
+}
+
+class JtplStatementNode extends JtplNode {
+    function build() {
+        $this->push('<?php %s { ?>', $this->get('statement'));
+        $this->buildChildren();
+        $this->push('<?php } ?>');
     }
 }
 
@@ -83,38 +141,12 @@ class JtplCompiler extends CompilerAbstract {
     function source($source, array $options = []) {
         $result = [];
         $data = is_array($source) ? $source : json_decode($source, true);
-        $html = new \hikari\html\Html;
-        foreach($data as $key => $value) {
-            $type = isset($value['type']) ? $value['type'] : null;
-            if($type == 'data') {
-                $node = new JtplDataNode($value);
-                $result += $node->code();
-                continue;
-            }
-            $tag = isset($value['tag']) ? $value['tag'] : null;
-            $attr = isset($value['attr']) ? $value['attr'] : [];
-            $content = isset($value['content']) ? $value['content'] : null;
-            if(isset($value['expression'])) {
-                $result[] = sprintf('<?php %s { ?>', $value['expression']);
-            } else if($tag) {
-                $result[] = $html->open($tag, $attr);
-            }
-            if(isset($value['children'])) {
-                $result[] = $this->source($value['children'], $options);
-            } else if($content !== null) {
-                $result[] = $this->interpolate($content);
-            }
-            if(isset($value['expression'])) {
-                $result[] = '<?php } ?>';
-            } else if($tag) {
-                $result[] = $html->close($tag);
-            }
-        }
-        return implode(PHP_EOL, $result);
+        $root = new JtplRootNode($this, ['children' => $data]);
+        return $root->toPhp();
     }
 
     function interpolate($string) {
-        $string = str_replace(['@(', '$(', ')'], ['<?php echo $this->escape(', '<?php echo $this->get(', ')?>'], $string);
+        $string = str_replace(['@(', '$(', ')'], ['<?php echo $this->encode(', '<?php echo $this->get(', ')?>'], $string);
         return $string;
     }
 
