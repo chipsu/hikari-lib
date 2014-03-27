@@ -7,6 +7,7 @@ use \hikari\component\Component;
 abstract class ViewAbstract extends Component implements ViewInterface {
     public $controller;
     public $cache;
+    public $watch = true;
     public $data;
     public $layout = 'main';
     public $content;
@@ -53,17 +54,22 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function template($name, array $options = ['direct' => false]) {
+
         if(!$this->cache || !$this->cache->value([__FILE__, $name], $file)) {
-            $file = $this->find($name);
-            $type = pathinfo($file, PATHINFO_EXTENSION);
+            $source = $this->find($name);
+            $type = pathinfo($source, PATHINFO_EXTENSION);
             if(!in_array($type, $this->executable)) {
                 $compiler = new $this->compilers[$type];
-                $result = $compiler->file($file);
-                $file = $this->storage . '/' . sha1($file) . '.php';
+                $result = $compiler->file($source);
+                $file = $this->storage . '/' . sha1($source) . '.php';
                 $compiler->store($file, $result);
+            } else {
+                $file = $source;
             }
             if($this->cache) {
-                $this->cache->set([__FILE__, $name], $file);
+                $this->cache->set([__FILE__, $name], $file, !$this->watch ?: [
+                    'watch' => ['src' => $source, 'dst' => $file]
+                ]);
             }
         }
         $buffer = empty($options['direct']);

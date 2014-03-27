@@ -18,20 +18,21 @@ class Apc extends CacheAbstract {
     function get($key, $default = null) {
         if(is_array($key)) $key = implode(PHP_EOL, $key);
         $result = apc_fetch($key, $success);
-        return $success ? $result : $default;
+        return $success && $this->validate($result) ? $result['value'] : $default;
     }
 
     function set($key, $value, $options = null) {
         if(is_array($key)) $key = implode(PHP_EOL, $key);
         $ttl = isset($options['ttl']) ? $options['ttl'] : $this->ttl;
-        $result = apc_store($key, $value, $ttl);
+        $result = apc_store($key, ['value' => $value, 'options' => $options], $ttl);
         return $this;
     }
 
     function value($key, &$value) {
         if(is_array($key)) $key = implode(PHP_EOL, $key);
-        $value = apc_fetch($key, $success);
-        return $success;
+        $result = apc_fetch($key, $success);
+        $value = isset($result['value']) ? $result['value'] : null;
+        return $success && $this->validate($result);
     }
 
     function values() {
@@ -42,5 +43,17 @@ class Apc extends CacheAbstract {
         if(is_array($key)) $key = implode(PHP_EOL, $key);
         apc_delete($key);
         return $this;
+    }
+
+    function validate($result) {
+        if(isset($result['options']['watch'])) {
+            $watch = $result['options']['watch'];
+            $src = $watch['src'];
+            $dst = $watch['dst'];
+            if(!is_file($src) || !is_file($dst) || filemtime($src) > filemtime($dst)) {
+                return false;
+            }
+        }
+        return isset($result['value']);
     }
 }

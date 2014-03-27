@@ -11,6 +11,10 @@ class HamlCompiler extends CompilerAbstract {
         $haml = new \HamlPHP;
         $haml->disableCache();
         $result = $haml->getCompiler()->parseString($source);
-        return $result;
+        $include = '<?php '.
+            'require_once \'' . __DIR__ . '/../../../haml-php/src/HamlPHP/HamlPHP.php\';'.
+            'require_once \'' . __DIR__ . '/../../../haml-php/src/HamlPHP/Storage/FileStorage.php\';'.
+            ' ?>';
+        return $include . $result;
     }
 }
