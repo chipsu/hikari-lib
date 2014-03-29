@@ -10,7 +10,7 @@ class Autoload {
 
 	static function init() {
 		// TODO: Use cache interface
-		$db = new \MongoClient();
+		#$db = new \MongoClient();
 		#static::$cache = $db->autoload->cache3;
 		if(static::$cache) {
 			static::$cache->ensureIndex(['key' => 1], ['unique' => 1]);
