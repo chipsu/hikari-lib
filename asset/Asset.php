@@ -145,7 +145,7 @@ class Asset extends Component {
 
     function compileSass($type, $src, $dst, array $options = []) {
         $shell = new Shell;
-        $shell->run('sass', ['-t', 'compressed', $src, $dst]) or CompilerException::raise($shell);
+        $shell->run('sass', ['-t', 'compressed', '-q', $src, $dst]) or CompilerException::raise($shell);
     }
 
     function compileLess($type, $src, $dst, array $options = []) {
