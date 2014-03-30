@@ -1,6 +1,7 @@
 <?php
 
-!defined('HI_DEBUG') && define('HI_DEBUG', getenv('HI_DEBUG') ?: 1);
+!defined('HI_ENV') && define('HI_ENV', getenv('HI_ENV') ?: 'development');
+!defined('HI_DEBUG') && define('HI_DEBUG', getenv('HI_DEBUG') ?: HI_ENV != 'production');
 !defined('HI_LOG') && define('HI_LOG', HI_DEBUG);
 
 require_once __DIR__ . '/autoload/Autoload.php';
