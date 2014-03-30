@@ -28,7 +28,7 @@ class Asset extends Component {
         'font' => ['method' => 'copyFile', 'extensions' => ['eot', 'woff', 'ttf', 'svg']],
     ];
     public $watch = true;
-    public $debug = true;
+    public $debug = HI_DEBUG;
     public $assetPath;
 
     function __construct(array $parameters = []) {
