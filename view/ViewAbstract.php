@@ -45,32 +45,36 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $this->layout($this->layout);
     }
 
-    function view($name) {
-        return $this->template('view/' . $name);
+    function view($name, array $options = []) {
+        return $this->template('view/' . $name, $options);
     }
 
-    function layout($name) {
-        return $this->template('layout/' . $name);
+    function layout($name, array $options = []) {
+        return $this->template('layout/' . $name, $options);
     }
 
-    function template($name, array $options = ['direct' => false]) {
-
-        if(!$this->cache || !$this->cache->value([__FILE__, $name], $file)) {
+    function template($name, array $options = []) {
+        $cacheKey = $this->cache ? [__FILE__, $name, json_encode($options)] : false;
+        if(!$this->cache || !$this->cache->value($cacheKey, $file)) {
             $source = $this->find($name);
             $type = pathinfo($source, PATHINFO_EXTENSION);
             if(!in_array($type, $this->executable)) {
                 $compiler = new $this->compilers[$type];
-                $result = $compiler->file($source);
-                $file = $this->storage . '/' . sha1($source) . '.php';
+                $output = isset($options['output']) ? $options['output'] : 'php';
+                $result = $compiler->file($source, ['output' => $output]);
+                $file = $this->storage . '/' . sha1($source) . '.' . $output;
                 $compiler->store($file, $result);
             } else {
                 $file = $source;
             }
             if($this->cache) {
-                $this->cache->set([__FILE__, $name], $file, !$this->watch ?: [
+                $this->cache->set($cacheKey, $file, !$this->watch ?: [
                     'watch' => ['src' => $source, 'dst' => $file]
                 ]);
             }
+        }
+        if(!empty($options['source'])) {
+            return file_get_contents($file);
         }
         $buffer = empty($options['direct']);
         if($buffer) {
@@ -97,6 +101,11 @@ abstract class ViewAbstract extends Component implements ViewInterface {
             }
         }
         \hikari\exception\NotFound::raise('Could not find view file "%s" in [%s]', $name, $this->paths);
+    }
+
+    function read($name) {
+        $file = $this->find($name);
+        return file_get_contents($file);
     }
 
     function encode($string) {

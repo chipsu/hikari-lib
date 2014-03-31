@@ -22,7 +22,7 @@ class HtplCompiler extends CompilerAbstract {
         case 'array':
             return $result;
         case 'json':
-            return json_encode($result);
+            return json_encode($result, $this->debug ? \JSON_PRETTY_PRINT : 0);
         case 'object':
             return (object)$result;
         case 'php':
