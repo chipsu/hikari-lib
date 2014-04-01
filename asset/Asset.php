@@ -39,12 +39,13 @@ class Asset extends Component {
         if(empty($this->assetPath)) {
             $this->assetPath = $this->application->path . '/asset';
         }
+        $this->cache = false;
         parent::initialize();
     }
 
     function url($asset, array $options = []) {
         $id = $asset . json_encode($options);
-        if($this->cache->value($id, $result)) {
+        if($this->cache && $this->cache->value($id, $result)) {
             $dst = $this->application->publicPath . '/' . $result;
             if($this->watch && strpos($asset, '://') === false) {
                 $src = $this->src($asset, $options);
@@ -56,17 +57,17 @@ class Asset extends Component {
             }
         }
         $result = $this->publish($asset, $options);
-        $this->cache->set($id, $result);
+        if($this->cache) {
+            $this->cache->set($id, $result);
+        }
         return $result;
     }
 
     function src($asset, array $options = []) {
         if(empty($options['absolute'])) {
-            $src = $this->assetPath . '/' . $asset;
-        } else {
-            $src = $asset;
+            return $this->assetPath . '/' . $asset;
         }
-        return $src;
+        return $asset;
     }
 
     function publish($asset, array $options = []) {
@@ -223,8 +224,11 @@ class Asset extends Component {
         $data = json_decode($data, true);
         json_last_error() and CompilerException::raise('JSON decode error in "%s": %s', $src, json_last_error_msg());
         if(isset($data['dependencies'])) {
-            foreach($this->expandFileList($data['dependencies'], $path) as $dependency) {
-                // TODO: build $dependency
+            foreach($data['dependencies'] as $dependency => $publishPath) {
+                foreach($this->expandFileList($dependency, $path) as $file) {
+                    $name = $publishPath . '/' . basename($file);
+                    $this->publish($file, ['absolute' => true, 'name' => $name]);
+                }
             }
         }
         switch($data['mode']) {
@@ -238,16 +242,25 @@ class Asset extends Component {
             $name = $this->trimExtension($name);
             return $this->publish($dst, ['absolute' => true, 'type' => $data['output'], 'name' => $name]);
         case 'compile':
-            $src = $this->getAbsoluteAssetName(dirname($src) . '/' . $data['source']);
-            return $this->publish($src);
+            $options = isset($data['options']) ? $data['options'] : [];
+            if(is_array($data['source'])) {
+                $options['absolute'] = true;
+                foreach($this->expandFileList($data['source'], $path) as $file) {
+                    $this->publish($file, $options);
+                }
+                return $data['source'];
+            } else {
+                $src = $this->getAbsoluteAssetName(dirname($src) . '/' . $data['source']);
+                return $this->publish($src, $options);
+            }
         default:
             NotSupported::raise($data->mode);
         }
     }
 
-    function expandFileList(array $files, $path) {
+    function expandFileList($files, $path) {
         $result = [];
-        foreach($files as $file) {
+        foreach(is_array($files) ? $files : [$files] as $file) {
             if(strpos($file, '*') === false) {
                 $result[] = $path . '/' . $file;
             } else {
