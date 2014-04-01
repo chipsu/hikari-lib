@@ -39,7 +39,6 @@ class Asset extends Component {
         if(empty($this->assetPath)) {
             $this->assetPath = $this->application->path . '/asset';
         }
-        $this->cache = false;
         parent::initialize();
     }
 
