@@ -7,7 +7,9 @@ class Apc extends CacheAbstract {
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
-        $this->ttl = $this->config->get(['cache', 'apc', 'ttl'], 0);
+        if($this->ttl === null) {
+            $this->ttl = $this->config->get(['cache', 'apc', 'ttl'], 0);
+        }
     }
 
     function has($key) {
