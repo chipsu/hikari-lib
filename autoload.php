@@ -10,19 +10,25 @@ require_once __DIR__ . '/autoload/Autoload.php';
 
 use hikari\autoload\Autoload as Autoload;
 
+$exception_handler = function(\Exception $exception) {
+    http_response_code(500);
+    error_log($exception);
+    if(HI_DEBUG && 0) {
+        printf('<pre>%s</pre>', $exception);
+    } else {
+        printf('Error in %s:%d: %s', basename($exception->getFile()), $exception->getLine(), $exception->getMessage());
+    }
+};
+
 set_error_handler(function($code, $message, $filename, $lineno) {
     throw new \ErrorException($message, $code, 1, $filename, $lineno);
 });
 
-set_exception_handler(function($exception) {
-    error_log($exception);
-    http_response_code(500);
-    if(HI_DEBUG) {
-        echo '<pre>';
-        echo $exception;
-        echo '</pre>';
-    } else {
-        echo $exception->getMessage();
+set_exception_handler($exception_handler);
+
+register_shutdown_function(function() use($exception_handler) {
+    if($error = error_get_last()) {
+        $exception_handler(new \ErrorException($error['message'], $error['type'], 1, $error['file'], $error['line']));
     }
 });
 
