@@ -12,6 +12,9 @@ class Bootstrap {
         Autoload::push($properties['path'] . '/lib'); // TODO: Autoload config
         $name = isset($properties['name']) ? $properties['name'] : basename($properties['path']);
         $class = isset($properties['class']) ? $properties['class'] : '\\' . $name .'\application\Application';
+        if(!class_exists($class)) {
+            $class = '\hikari\application\Application';
+        }
 		$app = new $class($properties);
 		return $app->run();
 	}
