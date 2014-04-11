@@ -30,4 +30,15 @@ class Html extends \hikari\component\Component {
     function close($name) {
         return sprintf('</%s>', htmlspecialchars($name));
     }
+
+    function a($href, array $attributes = [], $content) {
+        $attributes = array_merge($attributes, ['href' => $href]);
+        return $this->tag('a', $attributes, $content);
+    }
+
+    function img($src, array $attributes = []) {
+        return $this->tag('img', array_merge($attributes, [
+            'src' => $src,
+        ]));
+    }
 }
