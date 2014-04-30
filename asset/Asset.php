@@ -48,16 +48,23 @@ class Asset extends Component {
             $dst = $this->application->publicPath . '/' . $result;
             if($this->watch && strpos($asset, '://') === false) {
                 $src = $this->src($asset, $options);
-                if(is_file($dst) && filemtime(dirname($src)) <= filemtime($dst)) {
-                    return $result;
+                if(is_file($dst)) {
+                    $mtime = filemtime($dst);
+                    if(filemtime(dirname($src)) <= $mtime) {
+                        return $result . '?' . substr(dechex($mtime), -5);
+                    }
                 }
             } else if(is_file($dst)) {
-                return $result;
+                return $result . '?' . substr(dechex(filemtime($dst)), -5);
             }
         }
         $result = $this->publish($asset, $options);
         if($this->cache) {
             $this->cache->set($id, $result);
+        }
+        $dst = $this->application->publicPath . '/' . $result;
+        if(is_file($dst)) {
+            return $result . '?' . substr(dechex(filemtime($dst)), -5);
         }
         return $result;
     }
