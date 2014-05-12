@@ -13,7 +13,7 @@ use hikari\autoload\Autoload as Autoload;
 $exception_handler = function(\Exception $exception) {
     http_response_code(500);
     error_log($exception);
-    if(HI_DEBUG && 0) {
+    if(HI_DEBUG) {
         printf('<pre>%s</pre>', $exception);
     } else {
         printf('Error in %s:%d: %s', basename($exception->getFile()), $exception->getLine(), $exception->getMessage());
