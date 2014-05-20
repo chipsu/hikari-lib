@@ -139,8 +139,17 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $key;
     }
 
-    function url($route = null, array $args = []) {
+    function url($route = null, array $args = [], $auto = false) {
         if(isset($this->router)) {
+            if($auto) {
+                if(isset($this->controller) && !isset($args['class'])) {
+                    $args['class'] = explode('\\', get_class($this->controller));
+                    $args['class'] = lcfirst(array_pop($args['class']));
+                }
+                if(isset($this->controller->action) && !isset($args['action'])) {
+                    $args['action'] = $this->controller->action->id;
+                }
+            }
             return $this->router->build($route, $args);
         }
         return $route . '?' . http_build_query($args);
