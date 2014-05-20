@@ -17,6 +17,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $compilers = [
         'htpl' => '\hikari\view\compiler\HtplCompiler',
         'haml' => '\hikari\view\compiler\HamlCompiler',
+        'ptpl' => '\hikari\view\compiler\PtplCompiler',
     ];
     public $executable = [
         'php', 'phtml',
@@ -116,7 +117,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         if(isset($this->data[$key])) {
             $result = $this->data[$key];
         } else {
-            if(HI_LOG_W) \hiLog::w('Undefined view data key "%s"', $key);
+            #if(HI_LOG_W) \hiLog::w('Undefined view data key "%s"', $key);
             $result = $default;
         }
         return $encode ? htmlspecialchars($result) : $result;
