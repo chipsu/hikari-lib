@@ -19,6 +19,10 @@ class HtplCompiler extends CompilerAbstract {
             if(!strlen($trim) || $trim[0] == '#') {
                 continue;
             }
+            if($trim[0] == '&') {
+                var_dump('fixme: ' . $trim);
+                continue;
+            }
             if(!preg_match('/^(?<indent>\s+|)(?<tag>\w+)(?<id>#\w+|)(?<class>\.\w+|)(?<operator>[\=]|)\s*(?<content>.*+|)$/', $line, $match)) {
                 ParseError::raise('Parse error on line %d: "%s"', $index + 1, $line);
             }
