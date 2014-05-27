@@ -119,12 +119,22 @@ class JtplDataNode extends JtplNode {
 
 class JtplStatementNode extends JtplNode {
     function build() {
-        $this->push('<?php %s { ?>', $this->get('statement'));
+        $content = $this->get('content');
+        $this->push('<?php %s { ?>', $this->context->interpolate($content));
         $this->buildChildren();
         $this->push('<?php } ?>');
     }
 }
 
+class JtplApi {
+    function cat() {
+        return implode('', func_get_args());
+    }
+
+    function printf($format) {
+        return call_user_func_array('sprintf', func_get_args());
+    }
+}
 
 // foreach($items as $i) =>
 // php: same
@@ -140,15 +150,32 @@ class JtplCompiler extends CompilerAbstract {
 
     function interpolate($string) {
         $tags = [];
+        $string = preg_replace_callback('/&(?<identifier>\w+)/', function($match) use(&$tags) {
+            switch($match['identifier']) {
+            case 'each':
+                $result = 'foreach';
+                break;
+            case 'set':
+            case 'widget':
+                $result = 'if(false) { #';
+                break;
+            default:
+                $result = $match['identifier'];
+                break;
+            }
+            $tags[] = $result;
+            return chr(1) . (count($tags) - 1) . chr(2);
+        }, $string);
         $string = preg_replace_callback('/@(?<identifier>\w+)/', function($match) use(&$tags) {
             $tags[] = '<?php echo $this->get("' . $match['identifier'] . '", null, true)?>';
             return chr(1) . (count($tags) - 1) . chr(2);
         }, $string);
         $string = preg_replace_callback('/\$(?<identifier>\w+)/', function($match) use(&$tags) {
-            $tags[] = '<?php echo $this->get("' . $match['identifier'] . '")?>';
+            #$tags[] = '$this->get("' . $match['identifier'] . '")';
+            $tags[] = '${"' . $match['identifier'] . '"}';
             return chr(1) . (count($tags) - 1) . chr(2);
         }, $string);
-        $string = str_replace(['@(', '$(', ')'], ['<?php echo $this->encode(', '<?php echo $this->get(', ')?>'], $string);
+        /*$string = str_replace(['@(', '$(', ')'], ['<?php echo $this->encode(', '<?php echo $this->get(', ')?>'], $string);*/
         $string = preg_replace_callback('/' . chr(1) . '(?<id>\d+)' . chr(2) . '/', function($match) use($tags) {
             return $tags[$match['id']];
         }, $string);

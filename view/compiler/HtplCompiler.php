@@ -16,17 +16,18 @@ class HtplCompiler extends CompilerAbstract {
         foreach($lines as $index => $line) {
             $line = rtrim($line);
             $trim = ltrim($line);
+            $type = 'tag';
             if(!strlen($trim) || $trim[0] == '#') {
                 continue;
             }
             if($trim[0] == '&') {
-                var_dump('fixme: ' . $trim);
-                continue;
+                $type = 'statement';
+                $line = substr($line, 0, strpos($line, '&')) . 'statement ' . $trim;
             }
             if(!preg_match('/^(?<indent>\s+|)(?<tag>\w+)(?<id>#\w+|)(?<class>\.\w+|)(?<operator>[\=]|)\s*(?<content>.*+|)$/', $line, $match)) {
                 ParseError::raise('Parse error on line %d: "%s"', $index + 1, $line);
             }
-            var_dump($match);
+            #var_dump($match);
             $indent = strlen($match['indent']);
             echo 'tag:'. $match['tag'].'<br>';
             if($indent != $state['indent']) {
@@ -56,7 +57,7 @@ class HtplCompiler extends CompilerAbstract {
                 'class' => ltrim($match['class'], '.'),
             ];
             $attr = array_filter($attr, 'strlen');
-            $node[] = ['tag' => $match['tag'], 'attr' => $attr, 'content' => $match['content'], 'children' => []];
+            $node[] = ['type' => $type, 'tag' => $match['tag'], 'attr' => $attr, 'content' => $match['content'], 'children' => []];
             $match['node'] = &$node;
             $node = &$node[count($node) - 1]['children'];
             $stack[] = $match;
