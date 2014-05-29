@@ -42,14 +42,15 @@ trait ArrayTrait {
             $data = &$this->array;
             $last = array_pop($key);
             foreach($key as $k) {
+                $k = (string)$k;
                 if(!isset($data[$k]) || !is_array($data[$k])) {
                     $data[$k] = [];
                 }
                 $data = &$data[$k];
             }
-            $data[$last] = $value;
+            $data[(string)$last] = $value;
         } else {
-            $this->array[$key] = $value;
+            $this->array[(string)$key] = $value;
         }
         return $this;
     }
