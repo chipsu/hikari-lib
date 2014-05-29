@@ -148,9 +148,33 @@ class JtplCompiler extends CompilerAbstract {
         return $root->toPhp();
     }
 
+    public $masked = [];
+    function mask($string) {
+        $this->masked[] = $string;
+        return chr(1) . (count($this->masked) - 1) . chr(2);
+    }
+
+    function unmask($string) {
+        while(strpos($string, chr(1)) !== false) {
+            $string = preg_replace_callback('/' . chr(1) . '(?<id>\d+)' . chr(2) . '/', function($match) {
+                return $this->masked[$match['id']];
+            }, $string);
+        }
+        return $string;
+    }
+
     function interpolate($string) {
-        $tags = [];
-        $string = preg_replace_callback('/&(?<identifier>\w+)/', function($match) use(&$tags) {
+        $mask = function($match) {
+            var_dump($match);
+            return $this->mask($match[1]);
+        };
+        $string = preg_replace_callback('/(\\\["|\'])/', $mask, $string);
+        $string = preg_replace_callback('/("[^"]+")/', $mask, $string);
+        #$string = preg_replace_callback('/(\[[^\]]+\])/', $mask, $string);
+
+        # mask strings
+        # build tree from ()
+        $string = preg_replace_callback('/&(?<identifier>\w+)/', function($match) {
             switch($match['identifier']) {
             case 'each':
                 $result = 'foreach';
@@ -163,23 +187,17 @@ class JtplCompiler extends CompilerAbstract {
                 $result = $match['identifier'];
                 break;
             }
-            $tags[] = $result;
-            return chr(1) . (count($tags) - 1) . chr(2);
+            return $this->mask($result);
         }, $string);
-        $string = preg_replace_callback('/@(?<identifier>\w+)/', function($match) use(&$tags) {
-            $tags[] = '<?php echo $this->get("' . $match['identifier'] . '", null, true)?>';
-            return chr(1) . (count($tags) - 1) . chr(2);
+        $string = preg_replace_callback('/@(?<identifier>\w+)/', function($match) {
+            return $this->mask('<?php echo $this->get("' . $match['identifier'] . '", null, true)?>');
         }, $string);
-        $string = preg_replace_callback('/\$(?<identifier>\w+)/', function($match) use(&$tags) {
+        $string = preg_replace_callback('/\$(?<identifier>\w+)/', function($match) {
             #$tags[] = '$this->get("' . $match['identifier'] . '")';
-            $tags[] = '${"' . $match['identifier'] . '"}';
-            return chr(1) . (count($tags) - 1) . chr(2);
+            return $this->mask('${"' . $match['identifier'] . '"}');
         }, $string);
         /*$string = str_replace(['@(', '$(', ')'], ['<?php echo $this->encode(', '<?php echo $this->get(', ')?>'], $string);*/
-        $string = preg_replace_callback('/' . chr(1) . '(?<id>\d+)' . chr(2) . '/', function($match) use($tags) {
-            return $tags[$match['id']];
-        }, $string);
-        return $string;
+        return $this->unmask($string);;
     }
 
 }

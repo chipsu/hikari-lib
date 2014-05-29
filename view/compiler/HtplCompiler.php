@@ -72,7 +72,7 @@ class HtplCompiler extends CompilerAbstract {
             #$indent = substr_count(haystack, needle);
         }
         echo '<pre>';
-        print_r($result);
+        #print_r($result);
         #die;
         $TEST = [
             ['type' => 'data', 'value' => ['title' => 'Default title', 'items' => ['hello', 'world']]],
