@@ -5,7 +5,7 @@ namespace hikari\html;
 class Menu extends \hikari\component\Component {
     public $html;
 
-    function render($view, array $items, $wrap = ['nav', 'li'], $tag = 'li') {
+    function render($view, array $items, $wrap = ['nav', 'ul'], $tag = 'li') {
         $result = '';
         foreach($wrap as $t) {
             $result .= $this->html->open($t);
