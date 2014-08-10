@@ -25,8 +25,15 @@ class Autoload {
 			require_once(static::$classes[$class]);
 			return true;
 		}
-		foreach(static::$paths as $path) {
-        	$file = $path . '/' . str_replace('\\', '/', $class) . '.php';
+        $name = str_replace('\\', '/', $class);
+		foreach(static::$paths as $info) {
+            $path = $info['path'];
+            if($info['prefix'] && strpos($name, $info['prefix']) === 0) {
+                $file = ltrim(substr($name, strlen($info['prefix'])), '/');
+            } else {
+                $file = $name;
+            }
+        	$file = $path . '/' . $file . '.php';
         	if(is_file($file)) {
         		if(static::$cache) {
         			static::$classes[$class] = $file;
@@ -45,7 +52,7 @@ class Autoload {
 	}
 
 	// TODO: push prefix?
-	static function push($path) {
-		array_unshift(static::$paths, $path);
+	static function push($path, $prefix = false) {
+		array_unshift(static::$paths, ['path' => $path, 'prefix' => $prefix]);
 	}
 }
