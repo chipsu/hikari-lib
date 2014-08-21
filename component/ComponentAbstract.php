@@ -50,6 +50,10 @@ abstract class ComponentAbstract implements ComponentInterface {
                 $properties['application'] = $this->application;
         }
 
+        // Merge with local options
+        if(isset($this->componentOptions[$component]))
+            $options = array_merge($options, $this->componentOptions[$component]);
+
         // Merge defaults
         $options = array_merge(['name' => false, 'register' => false, 'shared' => false], $options);
         $name = empty($options['name']) ? str_replace('\\', '_', $component) : $options['name'];
@@ -59,6 +63,9 @@ abstract class ComponentAbstract implements ComponentInterface {
             $result = static::$components[$name];
         } else {
             $class = isset($config['class']) ? $config['class'] : $component;
+            // Merge with local properties
+            if(isset($this->componentProperties[$component]))
+                $properties = array_merge($properties, $this->componentProperties[$component]);
             if(isset($config['properties']))
                 $properties = array_merge($config['properties'], $properties);
             if(!class_exists($class)) {
