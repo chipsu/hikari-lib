@@ -7,8 +7,12 @@ class Menu extends \hikari\component\Component {
 
     function render($view, array $items, $wrap = ['nav', 'ul'], $tag = 'li', $innerWrap = ['ul']) {
         $result = '';
-        foreach($wrap as $t) {
-            $result .= $this->html->open($t);
+        foreach($wrap as $key => $value) {
+            if(is_numeric($key)) {
+                $result .= $this->html->open($value);
+            } else {
+                $result .= $this->html->open($key, $value);
+            }
         }
         foreach($items as $item) {
             # todo: item template/callback
@@ -20,8 +24,8 @@ class Menu extends \hikari\component\Component {
             }
             $result .= $this->html->close($tag);
         }
-        foreach($wrap as $t) {
-            $result .= $this->html->close($t);
+        foreach($wrap as $key => $value) {
+            $result .= $this->html->close(is_numeric($key) ? $value : $key);
         }
         return $result;
     }
