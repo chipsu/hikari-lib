@@ -41,7 +41,7 @@ abstract class RouterAbstract extends Component implements RouterInterface {
                     $request = $result;
                     continue;
                 }
-                $cacheKey and $this->cache->set($cacheKey, $result);
+                $this->cache and $this->cache->set($cacheKey, $result);
                 return $result;
             }
         }
