@@ -36,6 +36,7 @@ class Html extends \hikari\component\Component {
         'readonly' => true,
         'selected' => true,
     ];
+    public static $nextId = 1;
 
     function attributes(array $attributes) {    
         $result = [];
@@ -76,5 +77,55 @@ class Html extends \hikari\component\Component {
         return $this->tag('img', array_merge($attributes, [
             'src' => $src,
         ]));
+    }
+
+    function id() {
+        return '_hi_' . static::$nextId++;
+    }
+
+    function input($name, $type, array $attributes = []) {
+        $attributes = array_merge($attributes, ['name' => $name, 'type' => $type]);
+        return $this->autoLabel($attributes, 'before') . $this->tag('input', $attributes) . $this->autoLabel($attributes, 'after');
+    }
+
+    function text($name, array $attributes = [], $value = null) {
+        return $this->input($name, 'text', array_merge($attributes, ['value' => $value]));
+    }
+
+    function password($name, array $attributes = [], $value = null) {
+        return $this->input($name, 'password', array_merge($attributes, ['value' => $value]));
+    }
+
+    function submit($name, array $attributes = [], $value = null) {
+        return $this->input($name, 'submit', array_merge($attributes, ['value' => $value === null ? $name : $value]));
+    }
+
+    function reset($name, array $attributes = [], $value = null) {
+        return $this->input($name, 'reset', array_merge($attributes, ['value' => $value === null ? $name : $value]));
+    }
+
+    function button($name, array $attributes = [], $value = null) {
+        return $this->input($name, 'button', array_merge($attributes, ['value' => $value === null ? $name : $value]));
+    }
+
+    function textarea($name, array $attributes = [], $content = null) {
+        $attributes = array_merge($attributes, ['name' => $name]);
+        return $this->autoLabel($attributes, 'before') . $this->tag('textarea', $attributes, $content) . $this->autoLabel($attributes, 'after');
+    }
+
+    function label($title, $for = null, array $attributes = []) {
+        return $this->tag('label', array_merge($attributes, ['for' => $for]), $title);
+    }
+
+    function autoLabel(&$attributes, $position) {
+        if(!empty($attributes['label'])) {
+            if($position == (empty($attributes['labelPosition']) ? 'before' : $attributes['labelPosition'])) {
+                if(empty($attributes['id'])) {
+                    $attributes['id'] = $this->id();
+                }
+                return $this->label($attributes['label'], $attributes['id']);
+            }
+        }
+        return '';
     }
 }
