@@ -41,20 +41,20 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         parent::initialize();
     }
 
-    function render($name) {
+    function render($name, array $data = [], array $options = []) {
         $this->content = $this->view($name);
-        return $this->layout($this->layout);
+        return $this->layout($this->layout, $data, $options);
     }
 
-    function view($name, array $options = []) {
-        return $this->template('view/' . $name, $options);
+    function view($name, array $data = [], array $options = []) {
+        return $this->template('view/' . $name, $data, $options);
     }
 
-    function layout($name, array $options = []) {
-        return $this->template('layout/' . $name, $options);
+    function layout($name, array $data = [], array $options = []) {
+        return $this->template('layout/' . $name, $data, $options);
     }
 
-    function template($name, array $options = []) {
+    function template($name, array $data = [], array $options = []) {
         $cacheKey = $this->cache ? [__FILE__, $name, json_encode($options)] : false;
         if(!$this->cache || !$this->cache->value($cacheKey, $file)) {
             $source = $this->find($name);
@@ -82,7 +82,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
             ob_start() or \hikari\exception\Core::raise('ob_start failed');
         }
         try {
-            $this->includeFile($file);
+            $this->includeFile($file, $data);
         } catch(\Exception $ex) {
             if($buffer) ob_end_clean();
             throw $ex;
@@ -155,8 +155,9 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $route . '?' . http_build_query($args);
     }
 
-    protected function includeFile(/* $file */) {
+    protected function includeFile($_file_, array $_data_) {
         extract($this->data);
-        require(func_get_arg(0));
+        extract($_data_);
+        require($_file_);
     }
 }
