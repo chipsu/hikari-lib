@@ -9,6 +9,7 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
     public $actions = [];
     public $request;
     public $view;
+    public $viewFile;
     public $id;
 
     function __construct(array $properties = []) {
@@ -43,11 +44,23 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
 
             if(is_array($this->action->result)) {
                 $this->load('view', ['controller' => $this, 'data' => $this->action->result], ['register' => true]);
-                return $this->view->render($this->id . '/' . $this->action->id);
+                if($this->beforeRender()) {
+                    $viewFile = $this->viewFile();
+                    $result = $this->view->render($viewFile);
+                    $this->afterRender();
+                    return $result;
+                }
             }
             return $this->action->result;
         }
         return false;
+    }
+
+    protected function viewFile() {
+        if($this->viewFile == null) {
+            return $this->id . '/' . $this->action->id;
+        }
+        return $this->viewFile;
     }
 
     protected function beforeAction() {
@@ -55,6 +68,12 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
     }
 
     protected function afterAction() {
+    }
+
+    protected function beforeRender() {
         return true;
+    }
+
+    protected function afterRender() {
     }
 }
