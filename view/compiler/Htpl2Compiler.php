@@ -102,14 +102,11 @@ class Htpl2Compiler extends CompilerAbstract {
                 $args = $this->parseArgs($args);
                 printf("call: %s(%s)\n", $name, json_encode($args));
             }
+        } else if($expression = $this->parseExpression($line)) {
+            printf("expr: %s\n", $expression);
         } else {
             ParseError::raise('Parse error on line %d: "%s"', $this->index, $line);
         }
-
-        #if(!preg_match('/^(?<indent>\s+|)(?<tag>\w+)(?<id>#\w+|)(?<class>\.\w+|)(?<operator>[\=]|)\s*(?<content>.*+|)$/', $line, $match)) {
-        #} else {
-        #
-        #}
     }
 
     // key1=value1, key2=value2
@@ -124,23 +121,36 @@ class Htpl2Compiler extends CompilerAbstract {
     //   $functor()
     //   @lazydata translates to data-lazy
     //   [prefix]attr-name - works the same way as above, but fetches prefix from config - example &menu-id > hui-menu-id
+    // value can also be:
+    //   an array, like: key=[a=1 b=2 c=[3...]]
+    //   an expression that will be evaluated: key=($var + 1) or key=([array] + [otherArray])
     function parseArgs($string) {
         return ['poopface'];
     }
 
-    function parseIf($args) {
+    // parse an expression
+    //   operators: + - * / = !=  == etc..
+    //   array operators: []
+    //   expression group: ()
+    //   $variables & constants: "strings", 'strings', 1243214 or 324.3245
+    //   function call: expression(moreStuff)
+    function parseExpression($string) {
 
     }
 
-    function parseElseIf($args) {
+    function parseIf($string) {
 
     }
 
-    function parseElse($args) {
+    function parseElseIf($string) {
 
     }
 
-    function parseFor($args) {
+    function parseElse($string) {
+
+    }
+
+    function parseFor($string) {
 
     }
 }
