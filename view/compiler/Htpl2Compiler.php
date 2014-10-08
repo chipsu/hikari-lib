@@ -27,19 +27,80 @@ class Htpl2GeneratorPhp {
 #class Htpl2GeneratorJavaScript {
 #}
 
+class Node {
+    public $parent;
+    public $children = [];
+    public $data;
+
+    function __construct($data = null) {
+        $this->data = $data;
+    }
+
+    function add(Node $node) {
+        assert($node->parent == null);
+        $node->parent = $this;
+        $this->children[] = $node;
+        return $this;
+    }
+
+    function remove(Node $node) {
+        foreach($this->children as $key => $value) {
+            if($this->children[$key] === $value) {
+                unset($this->children[$key]);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function detach() {
+        if($this->parent) {
+            $this->parent->remove($this);
+        }
+        return $this;
+    }
+}
+
 class Htpl2Compiler extends CompilerAbstract {
     public $index;
     public $lines;
+    public $indent;
     public $indentSize;
+    public $root;
+    public $node;
 
     function source($source, array $options = []) {
         header('content-type: text/plain');
         $this->lines = explode(PHP_EOL, $source);
         $this->index = 0;
+        $this->indent = 0;
+        $this->root = new Node([
+            'type' => 'root',
+        ]);
+        $this->node = $this->root;
         while($this->index < count($this->lines)) {
-            $this->parseLine();
+            if($result = $this->parseLine()) {
+                $node = new Node($result);
+                $diff = $result['indent'] - $this->indent;
+                if($diff) {
+                    if($diff < 0) {
+                        while($diff++ < 0) {
+                            assert($this->node->parent);
+                            $this->node = $this->node->parent;
+                        }
+                    } else if($diff == 1) {
+                        $this->node->add($node);
+                        $this->node = $node;
+                    } else {
+                        ParseError::raise('Parse error on line %d: "%s" : Too much indentation (from %d to %d)', $result['index'], $result['source'], $this->indent, $result['indent']);
+                    }
+                    $this->indent = $result['indent'];
+                } else {
+                    $this->node->add($node);
+                }
+            }
         }
-        var_dump($source);
+        var_dump($this->root);
         die(__METHOD__);
         $output = isset($options['output']) ? $options['output'] : 'php';
         switch($output) {
@@ -65,13 +126,14 @@ class Htpl2Compiler extends CompilerAbstract {
     }
 
     function parseLine() {
-        $line = $this->lines[$this->index++];
+        $source = $this->lines[$this->index++];
+        $line = $source;
         $line = rtrim($line);
         $trim = ltrim($line);
         $indent = 0;
 
         if(!strlen($trim) || $trim[0] == '#') {
-            return;
+            return false;
         }
 
         if(preg_match('/^(?<indent>\s+|)/', $line, $match)) {
@@ -87,26 +149,23 @@ class Htpl2Compiler extends CompilerAbstract {
             }
         }
 
-        if(preg_match('/^(?<tag>\w+)(?<id>#\w+|)(?<class>\.\w+|)/', $line, $match)) { // tag#id.class
-            $name = $match[0];
-            $args = $this->parseArgs(substr($line, strlen($match[0])));
-            printf("tag: %s(%s)\n", $name, json_encode($args));
-        } else if(preg_match('/^%(?<class>\w+)\.(?<method>\w+)/', $line, $match) || preg_match('/^%(?<method>\w+)/', $line, $match)) { // %class.func | %func
-            $name = substr($match[0], 1);
-            $args = substr($line, strlen($match[0]));
-            $method = 'parse' . $name;
-            if(method_exists($this, $method)) {
-                $args = $this->$method($args);
-                printf("ctrl: %s(%s)\n", $name, json_encode($args));
-            } else {
-                $args = $this->parseArgs($args);
-                printf("call: %s(%s)\n", $name, json_encode($args));
+        $node = null;
+
+        foreach(['parseElement', 'parseCondition', 'parseMethod', 'parseExpression'] as $method) {
+            if($node = $this->$method($line)) {
+                break;
             }
-        } else if($expression = $this->parseExpression($line)) {
-            printf("expr: %s\n", $expression);
-        } else {
+        }
+
+        if(!$node) {
             ParseError::raise('Parse error on line %d: "%s"', $this->index, $line);
         }
+
+        $node['source'] = $source;
+        $node['indent'] = $indent;
+        $node['index'] = $this->index;
+
+        return $node;
     }
 
     // key1=value1, key2=value2
@@ -125,7 +184,28 @@ class Htpl2Compiler extends CompilerAbstract {
     //   an array, like: key=[a=1 b=2 c=[3...]]
     //   an expression that will be evaluated: key=($var + 1) or key=([array] + [otherArray])
     function parseArgs($string) {
-        return ['poopface'];
+        return [$string];
+    }
+
+    // tag#id.class
+    function parseElement($line) {
+        if(preg_match('/^(?<tag>\w+)(?<id>#\w+|)(?<class>\.\w+|)/', $line, $match)) {
+            $name = $match[0];
+            $args = $this->parseArgs(substr($line, strlen($match[0])));
+            return [
+                'type' => 'element',
+                'args' => $args,
+            ];
+        }
+        return false;
+    }
+
+    // %class.func | %func
+    function parseMethod($line) {
+        if(preg_match('/^%(?<class>\w+)\.(?<method>\w+)/', $line, $match) || preg_match('/^%(?<method>\w+)/', $line, $match)) {
+            return $match;
+        }
+        return false;
     }
 
     // parse an expression
@@ -134,23 +214,31 @@ class Htpl2Compiler extends CompilerAbstract {
     //   expression group: ()
     //   $variables & constants: "strings", 'strings', 1243214 or 324.3245
     //   function call: expression(moreStuff)
-    function parseExpression($string) {
-
+    function parseExpression($line) {
+        return $line;
     }
 
-    function parseIf($string) {
-
-    }
-
-    function parseElseIf($string) {
-
-    }
-
-    function parseElse($string) {
-
-    }
-
-    function parseFor($string) {
-
+    function parseCondition($line) {
+        if(preg_match('/^%(?<method>if |elseif |else|while )/', $line, $match)) {
+            $expression = $this->parseExpression(substr($line, strlen($match[0])));
+            return [
+                'type' => trim($match['method']),
+                'expression' => $expression,
+            ];
+        }
+        if(preg_match('/^%(?<method>for )/', $line, $match)) {
+            $statement = trim(substr($line, strlen($match[0])));
+            if(preg_match('/^(?<key>\$\w+) (?<value>\$\w+) in /', $statement, $innerMatch) ||
+               preg_match('/^(?<key>\$\w+) in /', $statement, $innerMatch)) {
+                $expression = $this->parseExpression(substr($statement, strlen($innerMatch[0])));
+                return [
+                    'type' => trim($match['method']),
+                    'key' => isset($innerMatch['key']) ? $innerMatch['key'] : null,
+                    'value' => $innerMatch['value'],
+                    'expression' => $expression,
+                ];
+            }
+        }
+        return false;
     }
 }
