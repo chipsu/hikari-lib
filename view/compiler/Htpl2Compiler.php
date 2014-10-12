@@ -161,6 +161,7 @@ class Htpl2Compiler extends CompilerAbstract {
             ParseError::raise('Parse error on line %d: "%s"', $this->index, $line);
         }
 
+        var_dump($node);
         $node['source'] = $source;
         $node['indent'] = $indent;
         $node['index'] = $this->index;
@@ -168,32 +169,21 @@ class Htpl2Compiler extends CompilerAbstract {
         return $node;
     }
 
-    // key1=value1, key2=value2
-    // where both key and value can be:
-    //   constant \w\_+
-    //   html-attribute-name (- allowed here)
-    //   "quoted string" or 'single quoted string'
-    //   $variable
-    //   $variable.property
-    //   $variable.method()
-    //   function()
-    //   $functor()
-    //   @lazydata translates to data-lazy
-    //   [prefix]attr-name - works the same way as above, but fetches prefix from config - example &menu-id > hui-menu-id
-    // value can also be:
-    //   an array, like: key=[a=1 b=2 c=[3...]]
-    //   an expression that will be evaluated: key=($var + 1) or key=([array] + [otherArray])
-    function parseArgs($string) {
-        return [$string];
-    }
-
-    // tag#id.class
+    /**
+     * Parse an element
+     *
+     * Format: tag#id.class
+     */
     function parseElement($line) {
-        if(preg_match('/^(?<tag>\w+)(?<id>#\w+|)(?<class>\.\w+|)/', $line, $match)) {
-            $name = $match[0];
-            $args = $this->parseArgs(substr($line, strlen($match[0])));
+        var_dump($line);
+        if(preg_match('/^(?<tag>\w+)(?<id>#[\-\w]+)(?<class>\.[\-\w]+)/', $line, $match)) {
+            $args = trim(substr($line, strlen($match[0])));
+            $args = $this->parseExpression('[' . $args . ']');
             return [
                 'type' => 'element',
+                'tag' => $match['tag'],
+                'id' => empty($match['id']) ? null : trim($match['id'], '#'),
+                'class' => empty($match['class']) ? null : explode('.', $match['class']),
                 'args' => $args,
             ];
         }
@@ -214,8 +204,24 @@ class Htpl2Compiler extends CompilerAbstract {
     //   expression group: ()
     //   $variables & constants: "strings", 'strings', 1243214 or 324.3245
     //   function call: expression(moreStuff)
+    // arrays:
+    //   key1=value1, key2=value2
+    //   where both key and value can be:
+    //     constant \w\_+
+    //     html-attribute-name (- allowed here)
+    //     "quoted string" or 'single quoted string'
+    //     $variable
+    //     $variable.property
+    //     $variable.method()
+    //     function()
+    //     $functor()
+    //     @lazydata translates to data-lazy
+    //     [prefix]attr-name - works the same way as above, but fetches prefix from config - example &menu-id > hui-menu-id
+    //   value can also be:
+    //     an array, like: key=[a=1 b=2 c=[3...]]
+    //     an expression that will be evaluated: key=($var + 1) or key=([array] + [otherArray])
     function parseExpression($line) {
-        return $line;
+        return ["expr($line)"];
     }
 
     function parseCondition($line) {
