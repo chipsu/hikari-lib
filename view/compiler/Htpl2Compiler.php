@@ -221,6 +221,39 @@ class Htpl2Compiler extends CompilerAbstract {
     //     an array, like: key=[a=1 b=2 c=[3...]]
     //     an expression that will be evaluated: key=($var + 1) or key=([array] + [otherArray])
     function parseExpression($line) {
+        $bits = [
+            'integer' => '[\d]+',
+            'float' => '[\d]+\.[\d]+',
+            'string' => '("(?:\\\"|.)*?")|\\\'(?:\\\\\'|.)*?\\\'',
+            'constant' => '(${string}|${float}|${integer})',
+            'variable' => '\$[\w\d]+',
+            'attribute' => '(\@[\w\-]+)|([\w\-]+)',
+            'expression' => '[\w]+',
+        ];
+        $compile = function($pattern) use($bits) {
+            $result = $pattern;
+            do {
+                $count = 0;
+                $result = preg_replace_callback('/\$\{(?<key>\w+)\}/', function($match) use($bits, &$count) {
+                    $count++;
+                    $key = $match['key'];
+                    if(!isset($bits[$key])) {
+                        throw new \Exception('Undefined key "' . $key . '"');
+                    }
+                    return $bits[$key];
+                }, $result);
+            } while($count > 0);
+            return $result;
+        };
+        $assignment = '/(?<key>${variable}|${constant}|${attribute}|${expression})\s*\=\s*(?<value>${variable}|${constant}|${expression})/';
+        $pattern = $compile($assignment);
+        var_dump($line);
+        var_dump($pattern);
+        if(preg_match_all($pattern, $line, $match)) {
+            echo "==============\n";
+            var_dump($match);
+            die;
+        }
         return ["expr($line)"];
     }
 
