@@ -68,6 +68,10 @@ class Htpl2Compiler extends CompilerAbstract {
     public $indentSize;
     public $root;
     public $node;
+    public $attributePrefix = [
+        '@' => 'data-',
+        '&' => 'hui-',
+    ];
 
     function source($source, array $options = []) {
         header('content-type: text/plain');
@@ -178,7 +182,7 @@ class Htpl2Compiler extends CompilerAbstract {
         var_dump($line);
         if(preg_match('/^(?<tag>\w+)(?<id>#[\-\w]+)(?<class>\.[\-\w]+)/', $line, $match)) {
             $args = trim(substr($line, strlen($match[0])));
-            $args = $this->parseExpression('[' . $args . ']');
+            $args = $this->parseArguments($args);
             return [
                 'type' => 'element',
                 'tag' => $match['tag'],
@@ -198,7 +202,7 @@ class Htpl2Compiler extends CompilerAbstract {
         return false;
     }
 
-    // parse an expression
+    // grammar
     //   operators: + - * / = !=  == etc..
     //   array operators: []
     //   expression group: ()
@@ -220,41 +224,72 @@ class Htpl2Compiler extends CompilerAbstract {
     //   value can also be:
     //     an array, like: key=[a=1 b=2 c=[3...]]
     //     an expression that will be evaluated: key=($var + 1) or key=([array] + [otherArray])
-    function parseExpression($line) {
-        $bits = [
+    protected function patterns() {
+        return [
+            'attributePrefix' => '(' . implode('|', array_map('preg_quote', array_keys($this->attributePrefix))) . ')',
             'integer' => '[\d]+',
             'float' => '[\d]+\.[\d]+',
-            'string' => '("(?:\\\"|.)*?")|\\\'(?:\\\\\'|.)*?\\\'',
+            'string' => '("(?:\\\"|.)*?")|(\\\'(?:\\\\\'|.)*?\\\')',
             'constant' => '(${string}|${float}|${integer})',
             'variable' => '\$[\w\d]+',
-            'attribute' => '(\@[\w\-]+)|([\w\-]+)',
-            'expression' => '[\w]+',
+            'attribute' => '(${attributePrefix}[\w\-]+)|([\w\-]+)',
+            'expression' => '(${subexpression}|${arguments})',
+            'subexpression' => $this->balancedRegex('(', ')'),
+            'arguments' => $this->balancedRegex('[', ']'),
         ];
-        $compile = function($pattern) use($bits) {
-            $result = $pattern;
-            do {
-                $count = 0;
-                $result = preg_replace_callback('/\$\{(?<key>\w+)\}/', function($match) use($bits, &$count) {
-                    $count++;
-                    $key = $match['key'];
-                    if(!isset($bits[$key])) {
-                        throw new \Exception('Undefined key "' . $key . '"');
-                    }
-                    return $bits[$key];
-                }, $result);
-            } while($count > 0);
-            return $result;
-        };
-        $assignment = '/(?<key>${variable}|${constant}|${attribute}|${expression})\s*\=\s*(?<value>${variable}|${constant}|${expression})/';
-        $pattern = $compile($assignment);
+    }
+
+    protected function balancedRegex($open, $close) {
+        $pattern = '(A((?>[^AB]+)|(?-2))*B)';
+        return str_replace(['A', 'B'], [preg_quote($open), preg_quote($close)], $pattern);
+    }
+
+    protected function compileRegex($pattern) {
+        $bits = $this->patterns();
+        $result = $pattern;
+        do {
+            $count = 0;
+            $result = preg_replace_callback('/\$\{(?<key>\w+)\}/', function($match) use($bits, &$count) {
+                $count++;
+                $key = $match['key'];
+                if(!isset($bits[$key])) {
+                    throw new \Exception('Undefined key "' . $key . '"');
+                }
+                return $bits[$key];
+            }, $result);
+        } while($count > 0);
+        return $result;
+    }
+
+    function parseArguments($line) {
+        $pattern = $this->compileRegex('/(?<key>(?<variable>${variable})|(?<constant>${constant})|(?<attribute>${attribute})|(${expression}))\=(?<value>(?<valueVariable>${variable})|(?<valueConstant>${constant})|(?<valueExpression>${expression}))/');
         var_dump($line);
         var_dump($pattern);
         if(preg_match_all($pattern, $line, $match)) {
+            $keys = $match['key'];
+            $values = $match['value'];
+            foreach($match['attribute'] as $index => $value) {
+                if(strlen($value)) {
+                    $keys[$index] = "'" . str_replace(array_keys($this->attributePrefix), array_values($this->attributePrefix), $value) . "'";
+                }
+            }
+            foreach($match['valueExpression'] as $index => $value) {
+                if(strlen($value)) {
+                    $values[$index] = $this->parseExpression($value);
+                }
+            }
+            $args = array_combine($keys, $values);
             echo "==============\n";
+            print_r($args);
+            echo "-...............==\n";
             var_dump($match);
             die;
         }
         return ["expr($line)"];
+    }
+
+    function parseExpression($line) {
+        return "EXPR[$line]";
     }
 
     function parseCondition($line) {
