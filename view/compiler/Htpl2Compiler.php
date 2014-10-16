@@ -75,6 +75,7 @@ class Htpl2Compiler extends CompilerAbstract {
 
     function source($source, array $options = []) {
         header('content-type: text/plain');
+        $source = preg_replace("/(\s*\\\\\n\s*)/", ' ', $source); # combine lines ending with \
         $this->lines = explode(PHP_EOL, $source);
         $this->index = 0;
         $this->indent = 0;
@@ -179,7 +180,6 @@ class Htpl2Compiler extends CompilerAbstract {
      * Format: tag#id.class
      */
     function parseElement($line) {
-        var_dump($line);
         if(preg_match('/^(?<tag>\w+)(?<id>#[\-\w]+)(?<class>\.[\-\w]+)/', $line, $match)) {
             $args = trim(substr($line, strlen($match[0])));
             $args = $this->parseArguments($args);
@@ -230,7 +230,8 @@ class Htpl2Compiler extends CompilerAbstract {
             'integer' => '[\d]+',
             'float' => '[\d]+\.[\d]+',
             'string' => '("(?:\\\"|.)*?")|(\\\'(?:\\\\\'|.)*?\\\')',
-            'constant' => '(${string}|${float}|${integer})',
+            'encoded' => '(' . chr(1) . '(\d+)' . chr(2) . ')',
+            'constant' => '(${string}|${encoded}|${float}|${integer})',
             'variable' => '\$[\w\d]+',
             'attribute' => '(${attributePrefix}[\w\-]+)|([\w\-]+)',
             'expression' => '(${subexpression}|${arguments})',
@@ -261,10 +262,30 @@ class Htpl2Compiler extends CompilerAbstract {
         return $result;
     }
 
+    protected $encoded = [];
+
+    protected function encodeStrings($text) {
+        return $this->encode($text, $this->compileRegex('/${string}/'));
+    }
+
+    // TODO: Tag different types (string & other) with different prefix & suffix
+    protected function encode($text, $pattern) {
+        return preg_replace_callback($pattern, function($match) {
+            $key = count($this->encoded);
+            $this->encoded[] = $match[0];
+            return chr(1) . $key . chr(2);
+        }, $text);
+    }
+
+    protected function decode($text) {
+        return preg_replace_callback('/' . chr(1) . '(\d+)' . chr(2) . '/', function($match) {
+            return $this->encoded[$match[1]];
+        }, $text);
+    }
+
     function parseArguments($line) {
+        $line = $this->encodeStrings($line);
         $pattern = $this->compileRegex('/(?<key>(?<variable>${variable})|(?<constant>${constant})|(?<attribute>${attribute})|(${expression}))\=(?<value>(?<valueVariable>${variable})|(?<valueConstant>${constant})|(?<valueExpression>${expression}))/');
-        var_dump($line);
-        var_dump($pattern);
         if(preg_match_all($pattern, $line, $match)) {
             $keys = $match['key'];
             $values = $match['value'];
@@ -278,18 +299,16 @@ class Htpl2Compiler extends CompilerAbstract {
                     $values[$index] = $this->parseExpression($value);
                 }
             }
+            $keys = array_map(array($this, 'decode'), $keys);
+            $values = array_map(array($this, 'decode'), $values);
             $args = array_combine($keys, $values);
-            echo "==============\n";
-            print_r($args);
-            echo "-...............==\n";
-            var_dump($match);
-            die;
+            return $args;
         }
-        return ["expr($line)"];
+        return ["NULLARGS($line)"];
     }
 
     function parseExpression($line) {
-        return "EXPR[$line]";
+        return ["EXPR[$line]"];
     }
 
     function parseCondition($line) {
