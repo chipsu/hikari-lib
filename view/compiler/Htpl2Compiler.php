@@ -14,23 +14,109 @@ optimization:
 
 */
 abstract class Htpl2Generator {
-    abstract function __emit($function, array $args);
+
+    function node(Node $node) {
+        if(!isset($node->data['type'])) {
+            #echo __METHOD__;
+            #var_dump($node->data);
+            return '';
+        }
+        $method = '_' . $node->data['type'];
+        $node->data['indentation'] = str_repeat('    ' , isset($node->data['indent']) ? $node->data['indent'] : 0);
+        return sprintf($node->data['indentation'] . '// %s:', $node->data['type']) . PHP_EOL . $node->data['indentation'] . $this->$method($node) . PHP_EOL;
+    }
+
+    function children(Node $node) {
+        $result = [];
+        $result[] = sprintf('// %s -> %d children:', $node->data['type'], count($node->children));
+        foreach($node->children as $child) {
+            if(empty($child->data['type'])) {
+                var_dump($child->data);
+                die;
+            }
+            $indent = str_repeat('    ' , isset($child->data['indent']) ? $child->data['indent'] : 0);
+            $result[] = $indent . sprintf('// child %s start:', $child->data['type']);
+            $result[] = $this->node($child);
+            $result[] = $indent . sprintf('// child %s end:', $child->data['type']);
+        }
+        return implode(PHP_EOL, $result) . PHP_EOL;
+    }
+
+    function _root(Node $node) {
+        return $this->children($node);
+    }
+
+    abstract function _element(Node $node);
+    abstract function _for(Node $node);
+    abstract function _if(Node $node);
+    abstract function _else(Node $node);
+    abstract function _call(Node $node);
 }
 
-class Htpl2GeneratorPhp {
+class Htpl2GeneratorPhp extends Htpl2Generator {
+
+    function run($node) {
+        return '<?php $html = new \hikari\html\Html;' . $this->node($node);
+    }
+
     function __emit($function, array $args) {
         return sprintf('$api.%s()', $function);
     }
 
+    function _element(Node $node) {
+        $tag = $node->data['tag'];
+        $args = '';
+        foreach($node->data['args'] as $key => $value) {
+            $args .= sprintf('%s => %s, ', $key, $value);
+        }
+        $args = rtrim($args, ', ');
+        return sprintf('echo $html->open("%s", [%s]);', $tag, $args) . $this->children($node)  . $node->data['indentation'] . sprintf('echo $html->close("%s");', $tag);
+    }
+
+    function _for(Node $node) {
+        return 'foreach([] as $key => $value) {' . $this->children($node) . $node->data['indentation'] . '}';
+    }
+
+    function _if(Node $node) {
+        return 'if(false) {' . $this->children($node) . $node->data['indentation'] . '}';
+    }
+
+    function _else(Node $node) {
+        return 'else {' . $this->children($node) . $node->data['indentation'] . '}';
+    }
+
+    function _call(Node $node) {
+        return '_call';
+    }
+
+    function _expression(Node $node) {
+        return sprintf('echo %s;', $node->data['expression']);
+    }
+
+}
+
+interface HtplInterface {
+    function is_string($var);
+    function is_traversable($var);
+}
+
+class Htpl implements HtplInterface {
+    function is_string($var) {
+        return is_string($var);
+    }
+
+    function is_traversable($var) {
+        return is_array($var) || $var instanceof \Traversable;
+    }
 }
 
 #class Htpl2GeneratorJavaScript {
 #}
 
 class Node {
+    public $data;
     public $parent;
     public $children = [];
-    public $data;
 
     function __construct($data = null) {
         $this->data = $data;
@@ -105,6 +191,12 @@ class Htpl2Compiler extends CompilerAbstract {
                 }
             }
         }
+        $generator = new Htpl2GeneratorPhp;
+        $code = $generator->run($this->root);
+        echo $code;
+        file_put_contents('/tmp/tpl.php', $code);
+        require('/tmp/tpl.php');
+        echo "\n--------------------\n";
         var_dump($this->root);
         die(__METHOD__);
         $output = isset($options['output']) ? $options['output'] : 'php';
@@ -154,24 +246,17 @@ class Htpl2Compiler extends CompilerAbstract {
             }
         }
 
-        $node = null;
-
         foreach(['parseElement', 'parseCondition', 'parseMethod', 'parseExpression'] as $method) {
             if($node = $this->$method($line)) {
-                break;
+                $node['source'] = $source;
+                $node['indent'] = $indent;
+                $node['index'] = $this->index;
+                $node['method'] = $method;
+                return $node;
             }
         }
 
-        if(!$node) {
-            ParseError::raise('Parse error on line %d: "%s"', $this->index, $line);
-        }
-
-        var_dump($node);
-        $node['source'] = $source;
-        $node['indent'] = $indent;
-        $node['index'] = $this->index;
-
-        return $node;
+        ParseError::raise('Parse error on line %d: "%s"', $this->index, $line);
     }
 
     /**
@@ -180,7 +265,7 @@ class Htpl2Compiler extends CompilerAbstract {
      * Format: tag#id.class
      */
     function parseElement($line) {
-        if(preg_match('/^(?<tag>\w+)(?<id>#[\-\w]+)(?<class>\.[\-\w]+)/', $line, $match)) {
+        if(preg_match('/^(?<tag>\w+)(?<id>#[\-\w]+|)(?<class>\.[\-\w]+|)/', $line, $match)) {
             $args = trim(substr($line, strlen($match[0])));
             $args = $this->parseArguments($args);
             return [
@@ -197,7 +282,7 @@ class Htpl2Compiler extends CompilerAbstract {
     // %class.func | %func
     function parseMethod($line) {
         if(preg_match('/^%(?<class>\w+)\.(?<method>\w+)/', $line, $match) || preg_match('/^%(?<method>\w+)/', $line, $match)) {
-            return $match;
+            #return $match;
         }
         return false;
     }
@@ -304,11 +389,14 @@ class Htpl2Compiler extends CompilerAbstract {
             $args = array_combine($keys, $values);
             return $args;
         }
-        return ["NULLARGS($line)"];
+        return [];
     }
 
     function parseExpression($line) {
-        return ["EXPR[$line]"];
+        return [
+            'type' => 'expression',
+            'expression' => ltrim($line, '%'),
+        ];
     }
 
     function parseCondition($line) {
