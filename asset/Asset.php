@@ -139,6 +139,8 @@ class Asset extends Component {
     }
 
     function minify($type, $src, $dst, array $options = []) {
+        return $this->copyFile($type, $src, $dst, $options);
+        
         $shell = new Shell;
         switch($type) {
         case 'js':

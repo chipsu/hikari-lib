@@ -14,6 +14,11 @@ optimization:
 
 */
 abstract class Htpl2Generator {
+    public $compiler;
+
+    function __construct($compiler) {
+        $this->compiler = $compiler;
+    }
 
     function node(Node $node) {
         if(!isset($node->data['type'])) {
@@ -56,7 +61,11 @@ abstract class Htpl2Generator {
 class Htpl2GeneratorPhp extends Htpl2Generator {
 
     function run($node) {
-        return '<?php $html = new \hikari\html\Html;' . $this->node($node);
+        return '<?php ' .
+               'namespace _anon_' . sha1(uniqid()) . '_; ' .
+               '$html = new \hikari\html\Html; ' .
+               '$api = new \hikari\view\htpl\Htpl; ' .
+               $this->node($node);
     }
 
     function __emit($function, array $args) {
@@ -74,7 +83,7 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
     }
 
     function _for(Node $node) {
-        return 'foreach([] as $key => $value) {' . $this->children($node) . $node->data['indentation'] . '}';
+        return 'foreach(["poo", "poop"] as $key => $value) {' . $this->children($node) . $node->data['indentation'] . '}';
     }
 
     function _if(Node $node) {
@@ -89,26 +98,22 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
         return '_call';
     }
 
+    function _echo(Node $node) {
+        return $this->_expression($node);
+    }
+
     function _expression(Node $node) {
-        return sprintf('echo %s;', $node->data['expression']);
+        $expression = $this->fixExpression($node->data['expression']);
+        return sprintf('echo %s;', $expression);
     }
 
-}
-
-interface HtplInterface {
-    function is_string($var);
-    function is_traversable($var);
-}
-
-class Htpl implements HtplInterface {
-    function is_string($var) {
-        return is_string($var);
-    }
-
-    function is_traversable($var) {
-        return is_array($var) || $var instanceof \Traversable;
+    function fixExpression($expression) {
+        $expression = $this->compiler->encodeStrings($expression);
+        $expression = preg_replace('/(\w+)(\.)(\w+)/', '${1}->${3}', $expression); // dot calls to ->
+        return $this->compiler->decode($expression);
     }
 }
+
 
 #class Htpl2GeneratorJavaScript {
 #}
@@ -191,7 +196,7 @@ class Htpl2Compiler extends CompilerAbstract {
                 }
             }
         }
-        $generator = new Htpl2GeneratorPhp;
+        $generator = new Htpl2GeneratorPhp($this);
         $code = $generator->run($this->root);
         echo $code;
         file_put_contents('/tmp/tpl.php', $code);
@@ -246,7 +251,7 @@ class Htpl2Compiler extends CompilerAbstract {
             }
         }
 
-        foreach(['parseElement', 'parseCondition', 'parseMethod', 'parseExpression'] as $method) {
+        foreach(['parseElement', 'parseCondition', 'parseEcho', 'parseExpression'] as $method) {
             if($node = $this->$method($line)) {
                 $node['source'] = $source;
                 $node['indent'] = $indent;
@@ -279,10 +284,13 @@ class Htpl2Compiler extends CompilerAbstract {
         return false;
     }
 
-    // %class.func | %func
-    function parseMethod($line) {
-        if(preg_match('/^%(?<class>\w+)\.(?<method>\w+)/', $line, $match) || preg_match('/^%(?<method>\w+)/', $line, $match)) {
-            #return $match;
+    // %expression
+    function parseEcho($line) {
+        $pattern = $this->compileRegex('/\s*(%.*)|(${constant})/');
+        if(preg_match($pattern, $line, $match)) {
+            $result = $this->parseExpression(ltrim($match[0], '%'));
+            $result['type'] = 'echo';
+            return $result;
         }
         return false;
     }
@@ -349,12 +357,12 @@ class Htpl2Compiler extends CompilerAbstract {
 
     protected $encoded = [];
 
-    protected function encodeStrings($text) {
+    function encodeStrings($text) {
         return $this->encode($text, $this->compileRegex('/${string}/'));
     }
 
     // TODO: Tag different types (string & other) with different prefix & suffix
-    protected function encode($text, $pattern) {
+    function encode($text, $pattern) {
         return preg_replace_callback($pattern, function($match) {
             $key = count($this->encoded);
             $this->encoded[] = $match[0];
@@ -362,7 +370,7 @@ class Htpl2Compiler extends CompilerAbstract {
         }, $text);
     }
 
-    protected function decode($text) {
+    function decode($text) {
         return preg_replace_callback('/' . chr(1) . '(\d+)' . chr(2) . '/', function($match) {
             return $this->encoded[$match[1]];
         }, $text);
@@ -393,9 +401,10 @@ class Htpl2Compiler extends CompilerAbstract {
     }
 
     function parseExpression($line) {
+        $expression = $line;
         return [
             'type' => 'expression',
-            'expression' => ltrim($line, '%'),
+            'expression' => $expression,
         ];
     }
 
