@@ -13,10 +13,14 @@ class Htpl implements HtplInterface {
     }
 
     function is_traversable($var) {
-        return is_array($var) || $var instanceof \Traversable;
+        return is_array($var) || $var instanceof \Iterator;
     }
 
     function encode($var) {
         return htmlspecialchars($var);
+    }
+
+    function concat() {
+        return implode('',  func_get_args());
     }
 }

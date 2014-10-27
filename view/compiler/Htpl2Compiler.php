@@ -76,6 +76,9 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
         $tag = $node->data['tag'];
         $args = '';
         foreach($node->data['args'] as $key => $value) {
+            if(is_array($value)) {
+                $value = $this->parseExpression($value['expression']);
+            }
             $args .= sprintf('%s => %s, ', $key, $value);
         }
         $args = rtrim($args, ', ');
@@ -83,11 +86,13 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
     }
 
     function _for(Node $node) {
-        return 'foreach(["poo", "poop"] as $key => $value) {' . $this->children($node) . $node->data['indentation'] . '}';
+        $expression = sprintf('%s as %s => %s', $this->parseExpression($node->data['expression']['expression']), $node->data['key'], $node->data['value']);
+        return 'foreach(' . $expression . ') {' . $this->children($node) . $node->data['indentation'] . '}';
     }
 
     function _if(Node $node) {
-        return 'if(false) {' . $this->children($node) . $node->data['indentation'] . '}';
+        $expression = $this->parseExpression($node->data['expression']['expression']);
+        return 'if(' . $expression . ') {' . $this->children($node) . $node->data['indentation'] . '}';
     }
 
     function _else(Node $node) {
@@ -103,11 +108,11 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
     }
 
     function _expression(Node $node) {
-        $expression = $this->fixExpression($node->data['expression']);
+        $expression = $this->parseExpression($node->data['expression']);
         return sprintf('echo %s;', $expression);
     }
 
-    function fixExpression($expression) {
+    function parseExpression($expression) {
         $expression = $this->compiler->encodeStrings($expression);
         $expression = preg_replace('/(\w+)(\.)(\w+)/', '${1}->${3}', $expression); // dot calls to ->
         return $this->compiler->decode($expression);
@@ -196,27 +201,18 @@ class Htpl2Compiler extends CompilerAbstract {
                 }
             }
         }
-        $generator = new Htpl2GeneratorPhp($this);
-        $code = $generator->run($this->root);
-        echo $code;
-        file_put_contents('/tmp/tpl.php', $code);
-        require('/tmp/tpl.php');
-        echo "\n--------------------\n";
-        var_dump($this->root);
-        die(__METHOD__);
         $output = isset($options['output']) ? $options['output'] : 'php';
         switch($output) {
-        case 'array':
-            return $result;
+        case 'raw':
+            return $this->root;
         case 'json':
             return json_encode($result, $this->debug ? \JSON_PRETTY_PRINT : 0);
         case 'object':
             return (object)$result;
         case 'php':
-            $compiler = new JtplCompiler;
-            $result =  $compiler->source($result);
-            var_dump($result);
-            die;
+            $generator = new Htpl2GeneratorPhp($this);
+            $result = $generator->run($this->root);
+            file_put_contents('/tmp/tpl.php', $result);
             return $result;
         default:
             NotSupported::raise($output);
