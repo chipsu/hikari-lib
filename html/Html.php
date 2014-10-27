@@ -38,7 +38,7 @@ class Html extends \hikari\component\Component {
     ];
     public static $nextId = 1;
 
-    function attributes(array $attributes) {    
+    function attributes(array $attributes) {
         $result = [];
         foreach($attributes as $key => $value) {
             if(isset(static::$booleanAttributes[$key])) {
@@ -46,7 +46,7 @@ class Html extends \hikari\component\Component {
                     $result[] = htmlspecialchars($key);
                 }
             } else if($value !== null) {
-                $result[] = sprintf('%s="%s"', htmlspecialchars($key), htmlspecialchars($value));
+                $result[] = sprintf('%s=\'%s\'', htmlspecialchars($key), is_scalar($value) ? htmlspecialchars($value) : json_encode($value));
             }
         }
         return $result ? ' ' . implode(' ', $result) : '';
