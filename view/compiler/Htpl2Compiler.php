@@ -28,7 +28,8 @@ abstract class Htpl2Generator {
         }
         $method = '_' . $node->data['type'];
         $node->data['indentation'] = str_repeat('    ' , isset($node->data['indent']) ? $node->data['indent'] : 0);
-        return sprintf($node->data['indentation'] . '// %s:', $node->data['type']) . PHP_EOL . $node->data['indentation'] . $this->$method($node) . PHP_EOL;
+        $source = isset($node->data['source']) ? $node->data['source'] : '<NULL>';
+        return sprintf($node->data['indentation'] . '// %s:', $node->data['type']) . ' | sauce: ' . $source . PHP_EOL . $node->data['indentation'] . $this->$method($node) . PHP_EOL;
     }
 
     function children(Node $node) {
@@ -114,7 +115,7 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
 
     function parseExpression($expression) {
         $expression = $this->compiler->encodeStrings($expression);
-        $expression = preg_replace('/(\w+)(\.)(\w+)/', '${1}->${3}', $expression); // dot calls to ->
+        $expression = preg_replace('/([a-zA-Z]+)(\.)(\w+)/', '${1}->${3}', $expression); // dot calls to ->
         return $this->compiler->decode($expression);
     }
 }
@@ -134,6 +135,7 @@ class Node {
 
     function add(Node $node) {
         assert($node->parent == null);
+        printf("add: %s to %s -- %s\n", $node->data['type'], $this->data['type'], $this->data['source']);
         $node->parent = $this;
         $this->children[] = $node;
         return $this;
@@ -155,8 +157,25 @@ class Node {
         }
         return $this;
     }
+
+    function tree() {
+        $result = $this->data;
+        foreach($this->children as $key => $value) {
+            $result['$children'][$key] = $value->tree();
+        }
+        return $result;
+    }
 }
 
+/**
+ * Quick regex hack HTPL compiler
+ *
+ * @todo Attribute values like function calls are not parsed correctly. Example "div @id=$value.id". Temporary solution: "div @id=($value.id)"
+ * @todo Inline function arguments are not parsed correcly, should be separated with a space (like arrays), not comma.
+ * @todo Named parameters for functions, like func("1" "2" fourth="4")
+ * @todo String concatenation. PHP uses ., JS uses +, HTPL uses ???. We can't really detect the type.. Use . and translate JS?
+ * @todo Optimization: Elemnts with no dynamic code should be optimized into a single echo, instead of $html->tag().
+ */
 class Htpl2Compiler extends CompilerAbstract {
     public $index;
     public $lines;
@@ -177,21 +196,25 @@ class Htpl2Compiler extends CompilerAbstract {
         $this->indent = 0;
         $this->root = new Node([
             'type' => 'root',
+            'source' => '<root>',
         ]);
         $this->node = $this->root;
         while($this->index < count($this->lines)) {
             if($result = $this->parseLine()) {
                 $node = new Node($result);
                 $diff = $result['indent'] - $this->indent;
+                printf("node: %s:%d\n", $result['type'], $diff);
                 if($diff) {
                     if($diff < 0) {
                         while($diff++ < 0) {
                             assert($this->node->parent);
                             $this->node = $this->node->parent;
                         }
-                    } else if($diff == 1) {
+                        printf("pop to: %s : %s\n", $this->node->data['type'], $this->node->data['source']);
                         $this->node->add($node);
-                        $this->node = $node;
+                    } else if($diff == 1) {
+                        $this->node = $this->node->children[count($this->node->children) - 1];
+                        $this->node->add($node);
                     } else {
                         ParseError::raise('Parse error on line %d: "%s" : Too much indentation (from %d to %d)', $result['index'], $result['source'], $this->indent, $result['indent']);
                     }
@@ -212,7 +235,7 @@ class Htpl2Compiler extends CompilerAbstract {
         case 'php':
             $generator = new Htpl2GeneratorPhp($this);
             $result = $generator->run($this->root);
-            file_put_contents('/tmp/tpl.php', $result);
+            file_put_contents('/tmp/tpl.php', $result . PHP_EOL . '/*' . print_r($this->root->tree(), true));
             return $result;
         default:
             NotSupported::raise($output);
