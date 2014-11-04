@@ -8,7 +8,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $controller;
     public $cache;
     public $watch = true;
-    public $data;
+    public $data = [];
     public $layout = 'main';
     public $content;
     public $extensions;
@@ -32,7 +32,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
             $this->paths[] = $this->application->path;
         }
         if(empty($this->extensions)) {
-
+            $this->extensions = array_merge($this->executable, array_keys($this->compilers));
         }
         if(empty($this->storage)) {
             $this->storage = $this->application->runtimePath . '/views';

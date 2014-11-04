@@ -2,9 +2,13 @@
 *.log
 *.swp
 *.geany
+*.tmp
 tmp/*
 .buildpath
 .project
 .settings/
 composer.lock
 
+*.phar
+tests/_output/*
+tests/*/*Tester.php
