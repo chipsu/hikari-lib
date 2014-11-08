@@ -150,7 +150,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
                     $args['action'] = $this->controller->action->id;
                 }
             }
-            return $this->router->build($route, $args);
+            return (string)$this->router->build($route, $args);
         }
         return $route . '?' . http_build_query($args);
     }
