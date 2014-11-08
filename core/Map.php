@@ -1,16 +1,16 @@
 <?php
 
-namespace hikari\utilities;
+namespace hikari\core;
 
-class Arrays {
-    static function merge(array $array1, array $array2) {
+class Map {
+    static function mergeArray(array $array1, array $array2) {
         $result = array();
         $arrays = func_get_args();
         foreach($arrays as $array) {
             foreach($array as $key => $value) {
                 if(is_string($key)) {
                     if(is_array($value) && array_key_exists($key, $result) && is_array($result[$key])) {
-                        $result[$key] = self::arrayMerge($result[$key], $value);
+                        $result[$key] = static::mergeArray($result[$key], $value);
                     } else {
                         $result[$key] = $value;
                     }

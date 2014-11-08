@@ -1,6 +1,6 @@
 <?php
 
-namespace hikari\autoload;
+namespace hikari\core;
 
 class Autoload {
 	public static $load = [__CLASS__, 'load'];

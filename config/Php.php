@@ -2,6 +2,10 @@
 
 namespace hikari\config;
 
+use \hikari\core\File;
+use \hikari\core\Map;
+use ArgumentException as ArgumentException;
+
 class Php extends Config {
     public $cache;
 
@@ -11,12 +15,12 @@ class Php extends Config {
 
     function load($config) {
         if(is_string($config)) {
-            is_file($config) or \hikari\exception\Argument::raise('File "%s" does not exist!', $config);
+            is_file($config) or ArgumentException::raise('File "%s" does not exist!', $config);
             $this->hash = filemtime($config);
             if(!$this->cache || !$this->cache->value([$this->hash, $config], $this->data)) {
                 $this->data = [];
                 $this->merge($config, true);
-                if($file = \hikari\utilities\File::getUserFile($config, true)) {
+                if($file = File::getUserFile($config, true)) {
                     $this->merge($file, true);
                 }
                 if($this->cache) {
@@ -30,24 +34,24 @@ class Php extends Config {
 
     function merge($config, $overwrite = false) {
         if(is_string($config)) {
-            is_file($config) or \hikari\exception\Argument::raise('File "%s" does not exist!', $config);
+            is_file($config) or ArgumentException::raise('File "%s" does not exist!', $config);
             if($result = require($config)) {
-                $this->data = $overwrite ? \hikari\utilities\Arrays::merge($this->data, $result) : \hikari\utilities\Arrays::merge($result, $this->data);
+                $this->data = $overwrite ? Map::mergeArray($this->data, $result) : Map::mergeArray($result, $this->data);
             }
             return $this;
         }
         return parent::merge($config, $overwrite);
     }
-    
+
     function save($filename) {
         $data = '<?php '.PHP_EOL;
         $data .= '$config = ';
         $data .= $this->toPhpConfig();
         if(false === @file_put_contents($filename, $data, LOCK_EX)) {
-            \hikari\exception\Argument::raise('Could not write config to "%s"!', $filename);
+            ArgumentException::raise('Could not write config to "%s"!', $filename);
         }
     }
-    
+
     function toPhpConfig() {
         $result = '';
         foreach($this->data as $key => $value) {

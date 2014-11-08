@@ -1,9 +1,9 @@
 <?php
 
-namespace hikari\utilities;
+namespace hikari\core;
 
 class File {
-    
+
     static function getUserFile($baseName, $exists = true, $suffix = 'user') {
         $info = pathinfo($baseName);
         $file = $info['dirname'] . '/' . $info['filename'] . '.' . $suffix . '.' . $info['extension'];

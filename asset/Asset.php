@@ -3,7 +3,8 @@
 namespace hikari\asset;
 
 use \hikari\component\Component;
-use \hikari\system\Shell;
+use \hikari\core\File;
+use \hikari\core\Shell;
 use \hikari\exception\Exception;
 use \hikari\exception\Exception as CompilerException;
 use \hikari\exception\NotSupported;
@@ -84,7 +85,7 @@ class Asset extends Component {
             $src = $dst . '/' . $name;
             $name = $this->trimExtension($name);
             if(!is_file($src)) {
-                \hikari\utilities\File::ensureDirectoryExists(dirname($src));
+                File::ensureDirectoryExists(dirname($src));
                 touch($src);
                 $fp = fopen($src, 'w+');
                 $ch = curl_init(str_replace(' ', '%20', $asset));
@@ -129,7 +130,7 @@ class Asset extends Component {
             isset($compiler['output']) ? $compiler['output'] : $type
         );
         $dst .= '/' . $name;
-        \hikari\utilities\File::ensureDirectoryExists(dirname($dst));
+        File::ensureDirectoryExists(dirname($dst));
         $result = call_user_func($method, $type, $src, $dst, $options);
         return is_string($result) ? $result : '/' . $path . '/' . $name;
     }
@@ -140,7 +141,7 @@ class Asset extends Component {
 
     function minify($type, $src, $dst, array $options = []) {
         return $this->copyFile($type, $src, $dst, $options);
-        
+
         $shell = new Shell;
         switch($type) {
         case 'js':

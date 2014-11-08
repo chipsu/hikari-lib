@@ -1,8 +1,6 @@
 <?php
 
-namespace hikari\bootstrap;
-
-use \hikari\autoload\Autoload as Autoload;
+namespace hikari\core;
 
 class Bootstrap {
 

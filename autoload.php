@@ -6,9 +6,9 @@ umask(002);
 !defined('HI_DEBUG') && define('HI_DEBUG', getenv('HI_DEBUG') ?: HI_ENV != 'production');
 !defined('HI_LOG') && define('HI_LOG', HI_DEBUG);
 
-require_once __DIR__ . '/autoload/Autoload.php';
+require_once __DIR__ . '/core/Autoload.php';
 
-use hikari\autoload\Autoload as Autoload;
+use hikari\core\Autoload as Autoload;
 
 $exception_handler = function(\Exception $exception) {
     http_response_code(500);

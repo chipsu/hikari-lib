@@ -3,7 +3,7 @@
 namespace hikari\http;
 
 use \hikari\component\Component as Component;
-use \hikari\utilities\Uri as Uri;
+use \hikari\core\Uri as Uri;
 
 class Request extends Component {
     public $uri;

@@ -189,7 +189,7 @@ class Htpl2Compiler extends CompilerAbstract {
     ];
 
     function source($source, array $options = []) {
-        header('content-type: text/plain');
+        //header('content-type: text/plain');
         $source = preg_replace("/(\s*\\\\\n\s*)/", ' ', $source); # combine lines ending with \
         $this->lines = explode(PHP_EOL, $source);
         $this->index = 0;

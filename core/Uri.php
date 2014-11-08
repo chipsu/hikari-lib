@@ -1,6 +1,6 @@
 <?php
 
-namespace hikari\utilities;
+namespace hikari\core;
 
 use \hikari\component\Component as Component;
 

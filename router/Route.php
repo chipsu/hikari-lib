@@ -2,8 +2,8 @@
 
 namespace hikari\router;
 
-use \hikari\component\Component as Component;
-use \hikari\utilities\Uri as Uri;
+use \hikari\component\Component;
+use \hikari\core\Uri;
 
 class Route extends Component {
     public $name;
@@ -39,7 +39,7 @@ class Route extends Component {
                     }
                     if(!isset($match[$key])) {
                         $match[$key] = $value;
-                    }   
+                    }
                     $match[$key] = $this->replaceParameters($match[$key], $match);
                 }
                 return $match;
