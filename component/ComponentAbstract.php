@@ -97,7 +97,7 @@ abstract class ComponentAbstract implements ComponentInterface {
 
         if($options['register']) {
             $name = empty($options['name']) ? str_replace('\\', '_', $component) : $options['name'];
-            if(isset($this->$name))
+            if(isset($this->$name) && empty($options['replace']))
                 \hikari\exception\Core::raise('Property "%s" is already set', $name);
             $this->$name = $result;
         }
