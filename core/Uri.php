@@ -2,7 +2,9 @@
 
 namespace hikari\core;
 
-use \hikari\component\Component as Component;
+use \hikari\component\Component;
+use \hikari\core\Server;
+use \hikari\exception\Argument;
 
 class Uri extends Component {
     public static $defaultPorts = array(
@@ -18,21 +20,21 @@ class Uri extends Component {
 
     function __construct($uri = null) {
         if($uri === null) {
-            $https = static::isServerHttps();
+            $https = Server::https();
             $scheme = $https ? 'https' : 'http';
-            $path = explode('?', $_SERVER['REQUEST_URI'], 2);
+            $path = explode('?', Server::requestUri(), 2);
             $uri = array(
                 'scheme' => $scheme,
-                'host' => $_SERVER['HTTP_HOST'],
-                'port' => $_SERVER['SERVER_PORT'] == static::$defaultPorts[$scheme] ? null : $_SERVER['SERVER_PORT'],
+                'host' => Server::host(),
+                'port' => Server::port() == static::$defaultPorts[$scheme] ? null : Server::port(),
                 'path' => urldecode($path[0]),
-                'query' => isset($path[1]) ? $path[1] : $_SERVER['QUERY_STRING'],
+                'query' => isset($path[1]) ? $path[1] : Server::queryString(),
             );
         } else if(is_string($uri)) {
             $uri = parse_url($uri);
         }
         if(!is_array($uri)) {
-            \hikari\exception\Argument::raise('Invalid URI "%s"', $uri);
+            Argument::raise('Invalid URI "%s"', $uri);
         }
         if(is_array($uri['query'])) {
             $uri['query'] = http_build_query($uri['query']);
@@ -47,7 +49,7 @@ class Uri extends Component {
         if($part = $this->host) {
             $result .= $part;
         } else {
-            $result .= $_SERVER['HTTP_HOST'];
+            $result .= Server::host();
         }
 
         if($part = $this->port) {
@@ -69,12 +71,5 @@ class Uri extends Component {
         }
 
         return $result;
-    }
-
-    static protected function isServerHttps() {
-        if(isset($_SERVER['HTTPS'])) {
-            return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-        }
-        return false;
     }
 }

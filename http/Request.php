@@ -2,8 +2,9 @@
 
 namespace hikari\http;
 
-use \hikari\component\Component as Component;
-use \hikari\core\Uri as Uri;
+use \hikari\component\Component;
+use \hikari\core\Server;
+use \hikari\core\Uri;
 
 class Request extends Component {
     public $uri;
@@ -16,13 +17,13 @@ class Request extends Component {
             $parameters['uri'] = new Uri;
         }
         if(empty($parameters['get'])) {
-            $parameters['get'] = $_GET;
+            $parameters['get'] = Server::getParams();
         }
         if(empty($parameters['post'])) {
-            $parameters['post'] = $_POST;
+            $parameters['post'] = Server::postParams();
         }
         if(empty($parameters['request'])) {
-            $parameters['request'] = $_REQUEST;
+            $parameters['request'] = Server::requestParams();
         }
         parent::__construct($parameters);
     }
