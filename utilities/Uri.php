@@ -15,7 +15,7 @@ class Uri extends Component {
     public $path;
     public $query;
     public $fragment;
-    
+
     function __construct($uri = null) {
         if($uri === null) {
             $https = static::isServerHttps();
@@ -24,8 +24,8 @@ class Uri extends Component {
             $uri = array(
                 'scheme' => $scheme,
                 'host' => $_SERVER['HTTP_HOST'],
-                'port' => $_SERVER['SERVER_PORT'] == static::$defaultPorts[$scheme] ? null : $_SERVER['SERVER_PORT'], 
-                'path' => urldecode($path[0]), 
+                'port' => $_SERVER['SERVER_PORT'] == static::$defaultPorts[$scheme] ? null : $_SERVER['SERVER_PORT'],
+                'path' => urldecode($path[0]),
                 'query' => isset($path[1]) ? $path[1] : $_SERVER['QUERY_STRING'],
             );
         } else if(is_string($uri)) {
@@ -39,38 +39,38 @@ class Uri extends Component {
         }
         parent::__construct($uri);
     }
-        
+
     function __toString() {
         $scheme = $this->scheme ? $this->scheme : 'http';
         $result = $scheme . '://';
-        
+
         if($part = $this->host) {
-            $result .= $this->host;
+            $result .= $part;
         } else {
             $result .= $_SERVER['HTTP_HOST'];
         }
-        
+
         if($part = $this->port) {
-            if(!isset(static::$defaultPorts[$scheme]) || $port != static::$defaultPorts[$scheme]) {
+            if(!isset(static::$defaultPorts[$scheme]) || $part != static::$defaultPorts[$scheme]) {
                 $result .= ':' . $part;
             }
         }
-        
+
         if($part = $this->path) {
             $result .= $part[0] === '/' ? $part : '/' . $part;
         }
-        
+
         if($part = $this->query) {
             $result .= '?' . $part;
         }
-        
+
         if($part = $this->fragment) {
             $result .= '#' . $part;
         }
-        
+
         return $result;
     }
-    
+
     static protected function isServerHttps() {
         if(isset($_SERVER['HTTPS'])) {
             return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
