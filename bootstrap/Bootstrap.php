@@ -6,8 +6,8 @@ use \hikari\autoload\Autoload as Autoload;
 
 class Bootstrap {
 
-	static function app(array $properties) {
-		assert(is_dir($properties['path']));
+    static function app(array $properties) {
+        assert(is_dir($properties['path']));
         Autoload::push($properties['path'] . '/..');
         Autoload::push($properties['path'] . '/lib'); // TODO: Autoload config
         $name = isset($properties['name']) ? $properties['name'] : basename($properties['path']);
@@ -15,7 +15,12 @@ class Bootstrap {
         if(!class_exists($class)) {
             $class = '\hikari\application\Application';
         }
-		$app = new $class($properties);
-		return $app->run();
-	}
+        $app = new $class($properties);
+        return $app;
+    }
+
+    static function run(array $properties) {
+        $app = static::app($properties);
+        return $app->run();
+    }
 }
