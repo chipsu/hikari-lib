@@ -6,6 +6,11 @@ class Application extends ApplicationAbstract {
     public $router;
     public $request;
 
+    function __construct(array $properties = []) {
+        parent::__construct($properties);
+        $this->load('router', [], ['register' => true]);
+    }
+
     function run() {
         // Rewrite fix
         if(empty($_GET) && ($pos = strpos($_SERVER['REQUEST_URI'], '?')) !== false) {
@@ -13,8 +18,7 @@ class Application extends ApplicationAbstract {
             parse_str($query, $_GET);
             $_REQUEST = array_merge($_GET, $_REQUEST);
         }
-        $this->load('request', [], ['register' => true]);
-        $this->load('router', [], ['register' => true]);
+        $this->load('request', [], ['register' => true, 'replace' => true]);
         echo $this->request();
     }
 
