@@ -78,9 +78,16 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
         $args = '';
         foreach($node->data['args'] as $key => $value) {
             if(is_array($value)) {
+                if(!isset($value['expression'])) {
+                    echo '<pre>';
+                    var_dump($value);
+                    die;
+                }
                 $value = $this->parseExpression($value['expression']);
             }
-            $args .= sprintf('%s => %s, ', $key, $value);
+            if($value !== null) {
+                $args .= sprintf('%s => %s, ', $key, $value);
+            }
         }
         $args = rtrim($args, ', ');
         return sprintf('echo $html->open("%s", [%s]);', $tag, $args) . $this->children($node)  . $node->data['indentation'] . sprintf('echo $html->close("%s");', $tag);
@@ -203,14 +210,14 @@ class Htpl2Compiler extends CompilerAbstract {
             if($result = $this->parseLine()) {
                 $node = new Node($result);
                 $diff = $result['indent'] - $this->indent;
-                printf("node: %s:%d\n", $result['type'], $diff);
+                #printf("node: %s:%d\n", $result['type'], $diff);
                 if($diff) {
                     if($diff < 0) {
                         while($diff++ < 0) {
                             assert($this->node->parent);
                             $this->node = $this->node->parent;
                         }
-                        printf("pop to: %s : %s\n", $this->node->data['type'], $this->node->data['source']);
+                        #printf("pop to: %s : %s\n", $this->node->data['type'], $this->node->data['source']);
                         $this->node->add($node);
                     } else if($diff == 1) {
                         $this->node = $this->node->children[count($this->node->children) - 1];
@@ -289,14 +296,16 @@ class Htpl2Compiler extends CompilerAbstract {
      * Format: tag#id.class
      */
     function parseElement($line) {
-        if(preg_match('/^(?<tag>\w+)(?<id>#[\-\w]+|)(?<class>\.[\-\w]+|)/', $line, $match)) {
+        if(preg_match('/^(?<tag>\w+)(?<id>#[\-\w]+|)(?<class>\.[\.\-\w]+|)/', $line, $match)) {
             $args = trim(substr($line, strlen($match[0])));
             $args = $this->parseArguments($args);
+            $args = array_merge([
+                '"id"' => empty($match['id']) ? null : '"' . trim($match['id'], '#') . '"',
+                '"class"' => empty($match['class']) ? null : '"' . trim(implode(' ', explode('.', $match['class']))) . '"',
+            ], $args);
             return [
                 'type' => 'element',
                 'tag' => $match['tag'],
-                'id' => empty($match['id']) ? null : trim($match['id'], '#'),
-                'class' => empty($match['class']) ? null : explode('.', $match['class']),
                 'args' => $args,
             ];
         }
