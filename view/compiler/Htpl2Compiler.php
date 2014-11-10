@@ -37,6 +37,7 @@ abstract class Htpl2Generator {
         $result[] = sprintf('// %s -> %d children:', $node->data['type'], count($node->children));
         foreach($node->children as $child) {
             if(empty($child->data['type'])) {
+                var_dump(__METHOD__);
                 var_dump($child->data);
                 die;
             }
@@ -80,6 +81,7 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
             if(is_array($value)) {
                 if(!isset($value['expression'])) {
                     echo '<pre>';
+                    var_dump(__METHOD__);
                     var_dump($value);
                     die;
                 }
@@ -142,7 +144,7 @@ class Node {
 
     function add(Node $node) {
         assert($node->parent == null);
-        printf("add: %s to %s -- %s\n", $node->data['type'], $this->data['type'], $this->data['source']);
+        #printf("add: %s to %s -- %s\n", $node->data['type'], $this->data['type'], $this->data['source']);
         $node->parent = $this;
         $this->children[] = $node;
         return $this;
