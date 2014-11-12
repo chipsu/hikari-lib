@@ -68,9 +68,9 @@ class Html extends \hikari\component\Component {
         return sprintf('</%s>', htmlspecialchars($name));
     }
 
-    function a($href, array $attributes = [], $content) {
+    function a($href, array $attributes = [], $content = null) {
         $attributes = array_merge($attributes, ['href' => $href]);
-        return $this->tag('a', $attributes, $content);
+        return $this->tag('a', $attributes, $content !== null ? $content : $href);
     }
 
     function img($src, array $attributes = []) {
