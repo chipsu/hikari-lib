@@ -18,6 +18,7 @@ class Application extends ApplicationAbstract {
 
     function request() {
         $request = $this->router->route($this->request);
+        $request->post = $this->request->post; // TODO: Not sure if this should be here or in the Router
         $action = $this->load('action', ['id' => $request->get('action')]);
         $controller = $this->load($request->get('controller'), [
             'application' => $this,
