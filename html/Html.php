@@ -108,6 +108,10 @@ class Html extends \hikari\component\Component {
         return $this->input($name, 'button', array_merge($attributes, ['value' => $value === null ? $name : $value]));
     }
 
+    function hidden($name, array $attributes = [], $value = null) {
+        return $this->input($name, 'hidden', array_merge($attributes, ['value' => $value === null ? $name : $value]));
+    }
+
     function textarea($name, array $attributes = [], $content = null) {
         $attributes = array_merge($attributes, ['name' => $name]);
         return $this->autoLabel($attributes, 'before') . $this->tag('textarea', $attributes, $content) . $this->autoLabel($attributes, 'after');
