@@ -36,7 +36,7 @@ trait ArrayTrait {
         }
         return isset($this->array[$key]) ? $this->array[$key] : $default;
     }
-    
+
     function set($key, $value, $options = null) {
         if(is_array($key)) {
             $data = &$this->array;
@@ -54,7 +54,7 @@ trait ArrayTrait {
         }
         return $this;
     }
-    
+
     function value($key, &$value) {
         if(is_array($key)) {
             $data = $this->array;
@@ -76,7 +76,7 @@ trait ArrayTrait {
     function values() {
         return $this->array;
     }
-    
+
     function remove($key) {
         if(is_array($key)) {
             $data = &$this->array;
