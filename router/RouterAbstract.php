@@ -3,7 +3,7 @@
 namespace hikari\router;
 
 use \hikari\component\Component as Component;
-use \hikari\utilities\Uri as Uri;
+use \hikari\core\Uri as Uri;
 
 abstract class RouterAbstract extends Component implements RouterInterface {
     public $routes = [];
@@ -30,7 +30,7 @@ abstract class RouterAbstract extends Component implements RouterInterface {
             $cacheKey = [__METHOD__, $request];
             if($this->cache->value($cacheKey, $result)) {
                 return $result;
-            }   
+            }
         }
         foreach($this->routes as $route) {
             if($match = $route->match($request)) {
@@ -47,7 +47,7 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         }
         \hikari\exception\NotFound::raise();
     }
-    
+
     function build($name, array $parameters = []) {
         if($this->cache) {
             $cacheKey = [$this->application->config->hash, __METHOD__, $name, json_encode($parameters)];
@@ -71,4 +71,3 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         return $result;
     }
 }
-    

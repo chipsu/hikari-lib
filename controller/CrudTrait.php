@@ -39,7 +39,12 @@ trait CrudTrait {
         if(!$result && !empty($query['_id'])) {
             \hikari\exception\Http::raise(404);
         }
-        return ['title' => __METHOD__, 'result' => $result];
+        return [
+            'title' => __METHOD__,
+            'route' => (string)$this->component('router')->build($this->id, ['action' => $this->action->id]),
+            'model' => $class::create(),
+            'result' => $result,
+        ];
     }
 
     // if numeric array: batch update

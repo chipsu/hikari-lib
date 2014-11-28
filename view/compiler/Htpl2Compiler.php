@@ -124,7 +124,13 @@ class Htpl2GeneratorPhp extends Htpl2Generator {
 
     function parseExpression($expression) {
         $expression = $this->compiler->encodeStrings($expression);
-        $expression = preg_replace('/([a-zA-Z]+)(\.)(\w+)/', '${1}->${3}', $expression); // dot calls to ->
+        while(true) {
+            $temp = preg_replace('/([a-zA-Z]+)(\.)(\w+)/', '${1}->${3}', $expression); // dot calls to ->
+            if(strcmp($temp, $expression) == 0) {
+                break;
+            }
+            $expression = $temp;
+        }
         return $this->compiler->decode($expression);
     }
 }
