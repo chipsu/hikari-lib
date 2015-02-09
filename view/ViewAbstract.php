@@ -2,7 +2,7 @@
 
 namespace hikari\view;
 
-use \hikari\component\Component;
+use \hikari\core\Component;
 
 abstract class ViewAbstract extends Component implements ViewInterface {
     public $controller;

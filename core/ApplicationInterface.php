@@ -1,8 +1,8 @@
 <?php
 
-namespace hikari\application;
+namespace hikari\core;
 
 interface ApplicationInterface {
     function run();
-    
+
 }

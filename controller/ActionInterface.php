@@ -2,7 +2,11 @@
 
 namespace hikari\controller;
 
-interface ActionInterface extends \hikari\component\ComponentInterface {
+use \hikari\core\ComponentInterface;
+
+interface ActionInterface extends ComponentInterface {
     function id();
+    function result();
+    function invoke(array $args);
 }
 

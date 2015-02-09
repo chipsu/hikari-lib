@@ -2,7 +2,9 @@
 
 namespace hikari\controller;
 
-abstract class ActionAbstract extends \hikari\component\Component implements ActionInterface {
+use \hikari\core\Component;
+
+abstract class ActionAbstract extends Component implements ActionInterface {
     public $id;
     public $result;
 
@@ -16,6 +18,10 @@ abstract class ActionAbstract extends \hikari\component\Component implements Act
 
     function id() {
         return $this->id;
+    }
+
+    function result() {
+        return $this->result;
     }
 }
 

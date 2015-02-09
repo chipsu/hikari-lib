@@ -2,7 +2,7 @@
 
 namespace hikari\router;
 
-use \hikari\component\Component;
+use \hikari\core\Component;
 use \hikari\core\Uri;
 
 class Route extends Component {

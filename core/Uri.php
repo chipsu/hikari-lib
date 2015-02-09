@@ -2,8 +2,6 @@
 
 namespace hikari\core;
 
-use \hikari\component\Component;
-use \hikari\core\Server;
 use \hikari\exception\Argument;
 
 class Uri extends Component {

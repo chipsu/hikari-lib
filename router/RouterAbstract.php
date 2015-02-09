@@ -2,14 +2,14 @@
 
 namespace hikari\router;
 
-use \hikari\component\Component as Component;
-use \hikari\core\Uri as Uri;
+use \hikari\core\Component;
+use \hikari\core\Uri;
 
 abstract class RouterAbstract extends Component implements RouterInterface {
     public $routes = [];
     public $cache;
 
-    function initialize() {
+    function init() {
         if($this->cache && $this->cache->value([$this->application->config->hash, __METHOD__], $routes)) {
             $this->routes = $routes;
         } else {
@@ -35,8 +35,8 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         foreach($this->routes as $route) {
             if($match = $route->match($request)) {
                 $result = clone $request;
-                $result->get = array_merge($result->get, $match);
-                $result->request = array_merge($result->request, $match);
+                $result->queryParams = array_merge($result->queryParams, $match);
+                #$result->request = array_merge($result->request, $match);
                 if($route->forward) {
                     $request = $result;
                     continue;

@@ -1,6 +1,6 @@
 <?php
 
-namespace hikari\component;
+namespace hikari\core;
 
 class Component extends ComponentAbstract {
 

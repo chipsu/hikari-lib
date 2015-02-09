@@ -3,8 +3,9 @@
 namespace hikari\core;
 
 class Server {
+    static $headers;
 
-    static function getParams() {
+    static function queryParams() {
         static::rewriteFix();
         return $_GET;
     }
@@ -32,6 +33,21 @@ class Server {
 
     static function requestUri() {
         return $_SERVER['REQUEST_URI'];
+    }
+
+    static function contentType() {
+        return $_SERVER['CONTENT_TYPE'];
+    }
+
+    static function requestMethod() {
+        return isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
+    }
+
+    static function headers() {
+        if(static::$headers === null) {
+            static::$headers = http_get_request_headers();
+        }
+        return static::$headers;
     }
 
     static function https() {

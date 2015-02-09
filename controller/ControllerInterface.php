@@ -2,6 +2,8 @@
 
 namespace hikari\controller;
 
-interface ControllerInterface extends \hikari\component\ComponentInterface {
-    function run(); 
+use \hikari\core\ComponentInterface;
+
+interface ControllerInterface extends ComponentInterface {
+    function run();
 }

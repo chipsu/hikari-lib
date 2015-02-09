@@ -2,5 +2,7 @@
 
 namespace hikari\router;
 
-interface RouterInterface extends \hikari\component\ComponentInterface {   
+use \hikari\core\ComponentInterface;
+
+interface RouterInterface extends ComponentInterface {
 }

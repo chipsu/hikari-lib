@@ -2,6 +2,6 @@
 
 namespace hikari\view;
 
-interface ViewInterface extends \hikari\component\ComponentInterface {
+interface ViewInterface extends \hikari\core\ComponentInterface {
     //function render();
 }

@@ -1,9 +1,8 @@
 <?php
 
-namespace hikari\application;
+namespace hikari\core;
 
 use \hikari\autoload\Autoload as Autoload;
-use \hikari\component\Component as Component;
 use \hikari\config\Php as PhpConfig;
 
 abstract class ApplicationAbstract extends Component implements ApplicationInterface {
@@ -12,8 +11,10 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
     public $path;
     public $publicPath;
     public $runtimePath;
+    public static $instance;
 
     function __construct(array $properties = array()) {
+        static::$instance = $this;
         $this->application = $this;
         if(empty($properties['path'])) {
             ArgumentException::raise('$properties[path]');
@@ -39,6 +40,6 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
             $this->runtimePath = $this->path . '/runtime';
         }
     }
-    
+
     public abstract function run();
 }
