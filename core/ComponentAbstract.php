@@ -309,9 +309,6 @@ abstract class ComponentAbstract extends Object implements ComponentInterface {
                     $result->component($name);
                 }
             }
-            if($result instanceof ComponentInterface) {
-                $result->initialize();
-            }
         }
 
         if($options['register']) {

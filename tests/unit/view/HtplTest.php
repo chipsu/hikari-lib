@@ -20,7 +20,6 @@ class HtplTest extends \Codeception\TestCase\Test {
                 'compilers' => ['htpl' => '\hikari\view\compiler\Htpl2Compiler'],
                 'storage' => sys_get_temp_dir(),
             ]);
-            $view->initialize();
             $source = $view->find('templates/test');
             $result = $view->template('templates/test');
             $this->assertEquals(file_get_contents(preg_replace('/\.htpl$/', '.html', $source)), $result);
