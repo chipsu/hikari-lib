@@ -36,11 +36,11 @@ class Asset extends Component {
         parent::__construct($parameters);
     }
 
-    function initialize() {
+    function init() {
         if(empty($this->assetPath)) {
             $this->assetPath = $this->application->path . '/asset';
         }
-        parent::initialize();
+        parent::init();
     }
 
     function url($asset, array $options = []) {
@@ -98,7 +98,7 @@ class Asset extends Component {
             }
         } else {
             $src = $this->src($asset, $options);
-            is_file($src) or NotFound::raise($src);
+            is_file($src) or NotFound::raise('Asset "%s" was not found (src=%s, path=%s, assetPath=%s)', $asset, $src, $path, $this->assetPath);
             $name = $this->trimExtension(isset($options['name']) ? $options['name'] : $asset);
         }
         $info = pathinfo($src);

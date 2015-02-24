@@ -2,7 +2,7 @@
 
 namespace hikari\core;
 
-use \hikari\component\Component;
+use \hikari\core\Component;
 
 class Shell extends Component {
     public $output = [];

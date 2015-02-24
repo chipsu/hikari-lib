@@ -2,7 +2,7 @@
 
 namespace hikari\http;
 
-use \hikari\component\Component as Component;
+use \hikari\core\Component as Component;
 
 class Response extends Component {
 
