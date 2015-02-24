@@ -27,7 +27,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         parent::__construct($parameters);
     }
 
-    function initialize() {
+    function init() {
         if(empty($this->paths)) {
             $this->paths[] = $this->application->path;
         }
@@ -38,7 +38,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
             $this->storage = $this->application->runtimePath . '/views';
             is_dir($this->storage) or mkdir($this->storage, 0755, true);
         }
-        parent::initialize();
+        parent::init();
     }
 
     function render($name, array $data = [], array $options = []) {

@@ -10,7 +10,6 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
     public $actions = [];
     public $request;
     public $view;
-    public $viewFile;
     public $id;
 
     function __construct(array $properties = []) {
@@ -52,13 +51,6 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
         }
 
         \hikari\exception\Core::raise('Action "%s" is not a method name or callback', $action);
-    }
-
-    protected function viewFile() {
-        if($this->viewFile == null) {
-            return $this->id . '/' . $this->action->id;
-        }
-        return $this->viewFile;
     }
 
     protected function beforeAction($event) {

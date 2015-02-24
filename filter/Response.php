@@ -33,7 +33,7 @@ class Response extends Filter {
 
     function afterAction($event) {
         if($this->_formatter) {
-            if($this->_formatter->run($event->result)) {
+            if($this->_formatter->run($event)) {
                 $event->headers['Content-Type'] = $this->_formatter->contentType;
                 $event->handled = true;
             }

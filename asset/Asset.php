@@ -2,7 +2,7 @@
 
 namespace hikari\asset;
 
-use \hikari\component\Component;
+use \hikari\core\Component;
 use \hikari\core\File;
 use \hikari\core\Shell;
 use \hikari\exception\Exception;

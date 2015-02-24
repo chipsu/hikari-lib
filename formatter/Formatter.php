@@ -3,5 +3,5 @@
 namespace hikari\formatter;
 
 abstract class Formatter extends \hikari\core\Component {
-    abstract function run(&$result);
+    abstract function run($event);
 }

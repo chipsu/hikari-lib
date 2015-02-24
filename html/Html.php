@@ -2,7 +2,7 @@
 
 namespace hikari\html;
 
-class Html extends \hikari\component\Component {
+class Html extends \hikari\core\Component {
     public static $voidElements = [
         'area' => true,
         'base' => true,

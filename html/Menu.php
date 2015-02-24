@@ -2,7 +2,7 @@
 
 namespace hikari\html;
 
-class Menu extends \hikari\component\Component {
+class Menu extends \hikari\core\Component {
     public $html;
 
     function render($view, array $items, $wrap = ['nav', 'ul'], $tag = 'li', $innerWrap = ['ul']) {

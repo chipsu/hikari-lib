@@ -6,8 +6,8 @@ class Json extends Formatter {
     public $contentType = 'application/json';
     public $options = \JSON_PRETTY_PRINT;
 
-    function run(&$result) {
-        $result = json_encode($result, $this->options);
+    function run($event) {
+        $event->result = json_encode($event->result, $this->options);
         return true;
     }
 }

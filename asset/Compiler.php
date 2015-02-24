@@ -2,7 +2,7 @@
 
 namespace hikari\asset;
 
-use \hikari\component\Component;
+use \hikari\core\Component;
 
 class Compiler extends Component {
 

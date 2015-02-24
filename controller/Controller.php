@@ -17,7 +17,7 @@ class Controller extends ControllerAbstract {
                 'formats' => [
                     'application/json' => '\hikari\formatter\Json',
                     'application/xml' => '\hikari\formatter\Xml',
-                    'text/html' => '\hikari\formatter\Html',
+                    'text/html' => '\hikari\formatter\View',
                     '*' => '\hikari\formatter\Text',
                 ],
             ],
