@@ -22,6 +22,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $executable = [
         'php', 'phtml',
     ];
+    private $_router;
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
@@ -39,6 +40,23 @@ abstract class ViewAbstract extends Component implements ViewInterface {
             is_dir($this->storage) or mkdir($this->storage, 0755, true);
         }
         parent::init();
+    }
+
+    // TODO: Not sure about this
+    function getRouter() {
+        if($this->_router === null) {
+            if($this->controller) {
+                $this->_router = $this->controller->getRouter();
+            }
+            if($this->_router === null) {
+                $this->_router = $this->createComponent('router', [/*'context' => $this->getContext()*/]);
+            }
+        }
+        return $this->_router;
+    }
+
+    function setRouter($value) {
+        $this->_router = $value;
     }
 
     function render($name, array $data = [], array $options = []) {
@@ -139,8 +157,9 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $key;
     }
 
+    // TODO: Mixin?
     function url($route = null, array $args = [], $auto = false) {
-        if(isset($this->router)) {
+        if($router = $this->getRouter()) {
             if($auto) {
                 if(isset($this->controller) && !isset($args['class'])) {
                     $args['class'] = explode('\\', get_class($this->controller));
@@ -150,7 +169,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
                     $args['action'] = $this->controller->action->id;
                 }
             }
-            return (string)$this->router->build($route, $args);
+            return (string)$router->build($route, $args);
         }
         return $route . '?' . http_build_query($args);
     }

@@ -11,6 +11,7 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
     public $request;
     public $view;
     public $id;
+    private $_router;
 
     function __construct(array $properties = []) {
         parent::__construct($properties);
@@ -30,6 +31,17 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
             $this->afterAction($event);
         }
         return $event;
+    }
+
+    function getRouter() {
+        if($this->_router === null) {
+            $this->_router = $this->createComponent('router', [/*'context' => $this->getContext()*/]);
+        }
+        return $this->_router;
+    }
+
+    function setRouter($value) {
+        $this->_router = $value;
     }
 
     protected function createAction() {
