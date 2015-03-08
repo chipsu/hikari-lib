@@ -10,6 +10,7 @@ class Route extends Component {
     public $regexp;
     public $format;
     public $target;
+    public $method;
     public $import;
     public $forward;
 
@@ -20,6 +21,9 @@ class Route extends Component {
 
     function match($request) {
         if(!$this->target) {
+            return false;
+        }
+        if($this->method && !in_array($request->method, $this->method)) {
             return false;
         }
         foreach($this->regexp as $index => $parts) {
@@ -113,6 +117,9 @@ class Route extends Component {
                 }
             }
         }
+        if($this->method && !is_array($this->method)) {
+            $this->method = [$this->method];
+        }
     }
 
     function replaceParameters($subject, array $parameters, &$keys = null) {
@@ -135,6 +142,9 @@ class Route extends Component {
     }
 
     function compilePattern($pattern) {
+        if(!is_string($pattern)) {
+            throw \hikari\exception\Argument::raise('$pattern should be a string');
+        }
         $callback = function($match) {
             $types = [
                 'string' => '\w\-_',
@@ -146,8 +156,12 @@ class Route extends Component {
             return sprintf('(?<%s>[%s]+)', $match['name'], $type);
         };
         $search = '/\\\:(?<name>[\w]+)(?<type>\\\\\([\w]+\\\\\)|)/';
-        $pattern = preg_quote($pattern, '/');
-        $pattern = preg_replace_callback($search, $callback, $pattern);
+        try {
+            $pattern = preg_quote($pattern, '/');
+            $pattern = preg_replace_callback($search, $callback, $pattern);
+        } catch(\Exception $ex) {
+            throw \hikari\exception\Core::raise('Could not compile pattern: "%s", error: "%s"', $pattern, $ex->getMessage());
+        }
         return '/^' . $pattern . '$/';
     }
 }
