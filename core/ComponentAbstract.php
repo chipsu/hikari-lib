@@ -156,6 +156,13 @@ abstract class ComponentAbstract extends Object implements ComponentInterface {
         return $mixin;
     }
 
+    function getComponent($name) {
+        if(!isset($this->_components[$name])) {
+            return $this->createComponent($name);
+        }
+        return $this->_components[$name];
+    }
+
     function createComponent($name, array $properties = []) {
         $properties = array_merge(['shared' => false, 'register' => true], $this->getConfig()->get(['component', $name], []), $properties);
         if($properties['shared'] && isset(static::$_sharedComponents[$name])) {
@@ -163,6 +170,9 @@ abstract class ComponentAbstract extends Object implements ComponentInterface {
         } else {
             if(!isset($properties['class'])) {
                 $properties['class'] = $name;
+            }
+            if(isset($this->componentProperties) && isset($this->componentProperties[$name])) {
+                $properties = array_merge($this->componentProperties[$name], $properties);
             }
             $instance = Object::createInstance($properties);
             if($properties['shared']) {

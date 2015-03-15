@@ -2,6 +2,9 @@
 
 namespace hikari\formatter;
 
+/**
+ * @todo before & afterRender events with controller? IViewSomethignEvent or component properties?
+ */
 class View extends Formatter {
     public $contentType = 'text/html';
 

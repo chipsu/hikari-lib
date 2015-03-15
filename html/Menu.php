@@ -3,7 +3,10 @@
 namespace hikari\html;
 
 class Menu extends \hikari\core\Component {
-    public $html;
+
+    function getHtml() {
+        return $this->getComponent('html');
+    }
 
     function render($view, array $items, $wrap = ['nav', 'ul'], $tag = 'li', $innerWrap = ['ul']) {
         $result = '';
