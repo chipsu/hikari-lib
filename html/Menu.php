@@ -21,7 +21,13 @@ class Menu extends \hikari\core\Component {
             # todo: item template/callback
             $content = sprintf('<i class="fa fa-fw %s"></i> %s', $item['icon'], $item['title']);
             $result .= $this->html->open($tag, isset($item['attr']) ? $item['attr'] : []);
-            $result .= $this->html->a(call_user_func_array(array($view, 'url'), $item['route']), [], $content);
+            if(isset($item['link'])) {
+                $result .= $this->html->a($item['link'], [], $content);
+            } else if(isset($item['route'])) {
+                $result .= $this->html->a(call_user_func_array(array($view, 'url'), $item['route']), [], $content);
+            } else {
+                $result .= $this->html->tag('div', [], $content);
+            }
             if(!empty($item['items'])) {
                 $result .= $this->render($view, $item['items'], $innerWrap, $tag, $innerWrap);
             }
