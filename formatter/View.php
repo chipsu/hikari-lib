@@ -10,8 +10,8 @@ class View extends Formatter {
 
     function run($event) {
         $view = $event->controller->createComponent('view', ['controller' => $event->controller, 'data' => $event->result]);
-        $viewFile = $event->controller->getViewFile();
         if($event->controller->beforeRender($event)) {
+            $viewFile = $event->controller->getViewFile();
             $event->result = $view->render($viewFile);
             return $event->controller->afterRender($event);
         }
