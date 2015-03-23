@@ -12,7 +12,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $layout = 'main';
     public $content;
     public $extensions;
-    public $paths = [];
+    private $_paths;
     public $storage;
     public $compilers = [
         'htpl' => '\hikari\view\compiler\HtplCompiler',
@@ -29,9 +29,6 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     }
 
     function init() {
-        if(empty($this->paths)) {
-            $this->paths[] = $this->application->path;
-        }
         if(empty($this->extensions)) {
             $this->extensions = array_merge($this->executable, array_keys($this->compilers));
         }
@@ -40,6 +37,21 @@ abstract class ViewAbstract extends Component implements ViewInterface {
             is_dir($this->storage) or mkdir($this->storage, 0755, true);
         }
         parent::init();
+    }
+
+    function getPaths() {
+        if($this->_paths === null) {
+            $this->paths = [$this->application->path];
+        }
+        return $this->_paths;
+    }
+
+    function setPaths(array $paths) {
+        // TODO: Move elsewhere
+        foreach($paths as &$path) {
+            $path = str_replace(['@app', '@lib', '@role'], [$this->application->path, $this->application->path . '/../lib', 'admin' /* <- yeah fix this too */], $path);
+        }
+        $this->_paths = $paths;
     }
 
     // TODO: Not sure about this

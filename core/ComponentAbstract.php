@@ -150,6 +150,7 @@ abstract class ComponentAbstract extends Object implements ComponentInterface {
                 $mixin->attach($this);
                 $this->_mixins[$name] = $mixin;
             } else {
+                $mixin->attach($this);
                 $this->_mixins[] = $mixin;
             }
         }
