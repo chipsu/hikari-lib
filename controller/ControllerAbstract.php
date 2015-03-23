@@ -12,6 +12,7 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
     public $view;
     public $id;
     private $_router;
+    private $_viewFile;
 
     function __construct(array $properties = []) {
         parent::__construct($properties);
@@ -42,6 +43,31 @@ abstract class ControllerAbstract extends Component implements ControllerInterfa
 
     function setRouter($value) {
         $this->_router = $value;
+    }
+
+    /**
+     * @todo Base Controller should not be aware of the View, ViewInterface or some clever event.
+     */
+    function getViewFile() {
+        if($this->_viewFile === null && $this->action) {
+            $this->_viewFile = $this->id . '/' . $this->action->id;
+        }
+        return $this->_viewFile;
+    }
+
+    function setViewFile($value) {
+        $this->_viewFile = $value;
+    }
+
+    /**
+     * @todo Same as viewFile, controller should not be directly aware of this
+     */
+    function beforeRender($event) {
+        return $this->trigger(__FUNCTION__, $event);
+    }
+
+    function afterRender($event) {
+        return $this->trigger(__FUNCTION__, $event);
     }
 
     protected function createAction() {

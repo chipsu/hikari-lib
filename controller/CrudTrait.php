@@ -70,7 +70,7 @@ trait CrudTrait {
     // if numeric array: batch delete
     function dispose() {
         $class = $this->modelClassName();
-        $model = $class::one($this->request->get('id'), ['hydrator' => true]);
+        $model = $class::one($this->request->query('id'), ['hydrator' => true]);
         if(!$model) {
             \hikari\exception\Http::raise(404);
         }
@@ -81,8 +81,8 @@ trait CrudTrait {
 
     protected function requestQuery() {
         $query = array(
-            '_id' => $this->request->get('id'),
-            //'data.type' => $this->request->get('type'),
+            '_id' => $this->request->query('id'),
+            //'data.type' => $this->request->query('type'),
         );
         return array_filter($query, function($item) { return $item !== null; });
     }
