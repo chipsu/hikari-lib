@@ -22,7 +22,7 @@ class Asset extends Component {
         'less' => ['method' => 'compileLess', 'output' => 'css'],
         'css' => ['method' => 'minify'],
         'typescript' => ['method' => 'compileTypeScript', 'output' => 'js'],
-        'coffee' => ['method' => 'compileCoffeeScript', 'output' => 'js'],
+        'coffee' => ['method' => 'compileCoffeeScript', 'output' => 'js', 'chaining' => true],
         'js' => ['method' => 'minify'],
         'image' => ['method' => 'compileImage', 'extensions' => ['jpg', 'jpeg', 'png', 'gif']],
         'json' => ['method' => 'compileJson', 'output' => 'dat'],
@@ -46,28 +46,44 @@ class Asset extends Component {
     function url($asset, array $options = []) {
         $id = $asset . json_encode($options);
         if($this->cache && $this->cache->value($id, $result)) {
-            $dst = $this->application->publicPath . '/' . $result;
-            if($this->watch && strpos($asset, '://') === false) {
-                $src = $this->src($asset, $options);
-                if(is_file($dst)) {
-                    $mtime = filemtime($dst);
-                    if(filemtime(dirname($src)) <= $mtime) {
-                        return $result . '?' . substr(dechex($mtime), -5);
-                    }
-                }
-            } else if(is_file($dst)) {
-                return $result . '?' . substr(dechex(filemtime($dst)), -5);
+            if($file = $this->getUrl($asset, $options, $result, $this->watch)) {
+                return $file;
             }
         }
         $result = $this->publish($asset, $options);
         if($this->cache) {
             $this->cache->set($id, $result);
         }
+        return $this->getUrl($asset, $options, $result, false, $result);
+    }
+
+    function checkTimeStamp($dst, $src) {
+        $mtime = filemtime($dst);
+        $times = [filemtime($src), filemtime(dirname($src))];
+        if($this->debug) {
+            $times[] = filemtime(__FILE__);
+        }
+        foreach($times as $time) {
+            if($time > $mtime) {
+                return false;
+            }
+        }
+        return $mtime;
+    }
+
+    function getUrl($asset, $options, $result, $watch = false, $default = null) {
         $dst = $this->application->publicPath . '/' . $result;
-        if(is_file($dst)) {
+        if($watch && strpos($asset, '://') === false) {
+            $src = $this->src($asset, $options);
+            if(is_file($dst)) {
+                if($mtime = $this->checkTimeStamp($dst, $src)) {
+                    return $result . '?' . substr(dechex($mtime), -5);
+                }
+            }
+        } else if(is_file($dst)) {
             return $result . '?' . substr(dechex(filemtime($dst)), -5);
         }
-        return $result;
+        return $default;
     }
 
     function src($asset, array $options = []) {
@@ -222,7 +238,26 @@ class Asset extends Component {
 
     function compileCoffeeScript($type, $src, $dst, array $options = []) {
         $shell = new Shell;
-        $shell->run('coffee', ['-c', '-o', dirname($dst), '--join', basename($dst), $src]) or CompilerException::raise($shell);
+        $files = isset($options['chain']) ? $options['chain'] : [$src];
+        $args = array_merge(['-o', dirname($dst), '--join', basename($dst), '-c'], $files);
+        if(!$shell->run('coffee', $args)) {
+            // Coffeescript join does not report correct source file.
+            $dir = $this->application->runtimePath . '/coffedebug';
+            $error = (string)$shell;
+            foreach($files as $file) {
+                if(!$shell->run('coffee', ['-o', $dir, '-c', $file])) {
+                    $error .= $shell . PHP_EOL . $error;
+                }
+                $js = $dir . '/' . pathinfo($file, \PATHINFO_FILENAME) . '.js';
+                if(is_file($js)) {
+                    unlink($js);
+                }
+            }
+            if(is_dir($dir)) {
+                rmdir($dir);
+            }
+            CompilerException::raise($error);
+        }
         if(!$this->debug) {
             $this->minify('js', $dst, $dst);
         }
@@ -243,13 +278,16 @@ class Asset extends Component {
         }
         switch($data['mode']) {
         case 'chain':
+            $name = $this->getAbsoluteAssetName($src);
+            $name = $this->trimExtension($name);
+            if(!empty($this->compilers[$data['output']]['chaining'])) {
+                return $this->publish($dst, ['absolute' => true, 'type' => $data['output'], 'name' => $name, 'chain' => $this->expandFileList($data['files'], $path)]);
+            }
             $content = '';
             foreach($this->expandFileList($data['files'], $path) as $file) {
                 $content .= file_get_contents($file);
             }
             file_put_contents($dst, $content);
-            $name = $this->getAbsoluteAssetName($src);
-            $name = $this->trimExtension($name);
             return $this->publish($dst, ['absolute' => true, 'type' => $data['output'], 'name' => $name]);
         case 'compile':
             $options = isset($data['options']) ? $data['options'] : [];
@@ -272,10 +310,10 @@ class Asset extends Component {
         $result = [];
         foreach(is_array($files) ? $files : [$files] as $file) {
             if(strpos($file, '*') === false) {
-                $result[] = $path . '/' . $file;
+                $result[] = realpath($path . '/' . $file);
             } else {
                 foreach(glob($path . '/' . $file, GLOB_BRACE) as $f) {
-                    $result[] = $f;
+                    $result[] = realpath($f);
                 }
             }
         }
