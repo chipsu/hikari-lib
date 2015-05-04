@@ -51,6 +51,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         foreach($paths as &$path) {
             $path = str_replace(['@app', '@lib', '@role'], [$this->application->path, $this->application->path . '/../lib', 'admin' /* <- yeah fix this too */], $path);
         }
+        //$this->_paths = $this->io->getAliasArray($paths);
         $this->_paths = $paths;
     }
 

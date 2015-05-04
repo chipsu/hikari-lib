@@ -41,7 +41,7 @@ trait CrudTrait {
         }
         return [
             'title' => __METHOD__,
-            'route' => (string)$this->component('router')->build($this->id, ['action' => $this->action->id]),
+            'route' => (string)$this->router->build($this->id),
             'model' => $class::create(),
             'result' => $result,
         ];
