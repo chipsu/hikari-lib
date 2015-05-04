@@ -18,8 +18,12 @@ abstract class ComponentAbstract extends Object implements ComponentInterface {
     private $_config;
     protected static $_sharedComponents = [];
     private $_events = [];
+    public $propertyFilters = [];
 
     function __construct(array $properties = []) {
+        foreach($this->propertyFilters as $filter) {
+            $this->$filter($properties);
+        }
         foreach(['components', 'mixins'] as $key) {
             if(isset($properties[$key])) {
                 $this->{'__' . $key} = $properties[$key];
