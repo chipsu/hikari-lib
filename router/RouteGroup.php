@@ -10,20 +10,15 @@ class RouteGroup extends Component {
     public $name;
     private $_routes = [];
     public $controllerMap = [];
-    public $propertyFilters = ['parseQuickRoutes'];
+    public $propertyFilters = ['propertyFilter'];
 
-    public function parseQuickRoutes(array &$properties) {
+    public function propertyFilter(array &$properties) {
         if(!isset($properties['routes'])) {
             $properties['routes'] = [];
         }
         foreach($properties as $key => $value) {
-            if(strpos($key, '@') !== false) {
-                $methods = ['get', 'post']; #FIX!!!!
-                $properties['routes'][] = [
-                    'methods' => $methods,
-                    'format' => array_shift($value),
-                    'params' => $value,
-                ];
+            if(is_numeric($key)) {
+                $properties['routes'][] = $value;
                 unset($properties[$key]);
             }
         }
