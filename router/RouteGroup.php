@@ -34,13 +34,16 @@ class RouteGroup extends Component {
                 $route = new Route($route);
             }
         }
-        $this->$this->_routes = $routes;
+        $this->_routes = $routes;
         return $this;
     }
 
     public function match(Request $request) {
         foreach($this->routes as $route) {
-
+            if($match = $route->match($request)) {
+                return $match;
+            }
         }
+        return false;
     }
 }

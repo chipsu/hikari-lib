@@ -5,6 +5,23 @@ namespace hikari\router;
 use \hikari\core\Component;
 use \hikari\core\Uri;
 
+class Log {
+    static function trace() {
+        if(!headers_sent())
+            header('content-type: text');
+        $args = func_get_args();
+        foreach($args as &$arg) {
+            if(is_object($arg)) {
+                $arg = (string)$arg;
+            } else if(is_array($arg)) {
+                $arg = print_r($arg, true);
+            }
+        }
+        call_user_func_array('printf', $args);
+        echo PHP_EOL;
+    }
+}
+
 /**
  * @class
  *
@@ -21,8 +38,8 @@ class Route extends Component {
     ///public $forward;
     public $propertyFilters = ['propertyFilter'];
 
-    public function __construct(array $parameters = []) {
-        parent::__construct($parameters);
+    public function __construct(array $properties = []) {
+        parent::__construct($properties);
     }
 
     public function propertyFilter(array &$properties) {
@@ -43,46 +60,44 @@ class Route extends Component {
     }
 
     public function init() {
-        header('content-type: text/plain');
         parent::init();
-        #var_dump($this);
-        die;
     }
 
     public function getMethods() {
-        return $this->_methods;
+        return $this->getFormat('http:method');
     }
 
     public function setMethods($methods) {
         if(is_string($methods)) {
             $methods = str_replace('@rest', 'head,options,get,put,post,patch,delete', $methods); # TODO: Real aliases
+            $methods = strtoupper($methods);
             $methods = explode(',', $methods);
         }
-        return $this->setFormat('method', $methods);
+        return $this->setFormat('http:method', $methods);
     }
 
     public function getScheme() {
-        return $this->getFormat('scheme');
+        return $this->getFormat('uri:scheme');
     }
 
     public function setScheme($scheme) {
-        return $this->setFormat('scheme', $scheme);
+        return $this->setFormat('uri:scheme', $scheme);
     }
 
     public function getPath() {
-        return $this->getFormat('path');
+        return $this->getFormat('uri:path');
     }
 
     public function setPath($path) {
-        return $this->setFormat('path', $path);
+        return $this->setFormat('uri:path', $path);
     }
 
     public function getHost() {
-        return $this->getFormat('host');
+        return $this->getFormat('uri:host');
     }
 
     public function setHost($host) {
-        return $this->setFormat('host', $path);
+        return $this->setFormat('uri:host', $path);
     }
 
     public function getFormats() {
@@ -135,14 +150,34 @@ class Route extends Component {
         return isset($this->_regexps[$part]) ? $this->_regexps[$part] : $default;
     }
 
-    public function match($request) {
-        #if(!$this->target) {
-        #    return false;
-        #}
-        if(!in_array('*', $this->methods) && !in_array($request->method, $this->methods)) {
-            return false;
+    public function getRequestPart($request, $part) {
+        $parts = explode(':', $part, 2);
+        switch($parts[0]) {
+        case 'http':
+            return $request->{$parts[1]};
+        case 'uri':
+            return $request->uri->{$parts[1]};
         }
-        foreach($this->regexp as $index => $parts) {
+        CoreException::raise();
+    }
+
+    public function match($request) {
+        if(HI_LOG) Log::trace('%s: Try: %s', __METHOD__, $request);
+        $matches = [];
+        foreach($this->regexps as $part => $regexp) {
+            $subject = $this->getRequestPart($request, $part);
+            if(!preg_match($regexp, $subject, $match)) {
+                if(HI_LOG) Log::trace('%s:   Failed! part="%s" regexp="%s" subject="%s"', __METHOD__, $part, $regexp, $subject);
+                return false;
+            }
+            if(HI_LOG) Log::trace('%s:   Match! part="%s" regexp="%s" subject="%s": "%s"', __METHOD__, $part, $regexp, $subject, $match);
+            $matches[] = $match;
+        }
+        if(HI_LOG) Log::trace('%s:   Success!: "%s"', __METHOD__, $matches);
+        var_dump($matches);
+        die;
+        return false;
+        /*foreach($this->regexps as $part => regexp) {
             $matches = [];
             foreach($parts as $part => $regexp) {
                 if(!preg_match($regexp, $request->uri->$part, $match)) {
@@ -165,7 +200,7 @@ class Route extends Component {
                 return $match;
             }
         }
-        return false;
+        return false;*/
     }
 
     function build($name, array $parameters) {
@@ -233,7 +268,6 @@ class Route extends Component {
                 }
             }
         }
-        var_dump($this);die;
     }
 
     function replaceParameters($subject, array $parameters, &$keys = null) {
@@ -278,9 +312,6 @@ class Route extends Component {
         }
         $pattern = implode('|', $patterns);
         $regexp = '/^' . $pattern . '$/';
-        var_dump($regexp);
-        var_dump(preg_match($regexp, '/hej/33', $match));
-        var_dump($match);
         return $regexp;
     }
 }
