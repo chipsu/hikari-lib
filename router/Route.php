@@ -7,8 +7,9 @@ use \hikari\core\Uri;
 
 class Log {
     static function trace() {
-        if(!headers_sent())
+        if(!headers_sent()) {
             header('content-type: text');
+        }
         $args = func_get_args();
         foreach($args as &$arg) {
             if(is_object($arg)) {
@@ -25,14 +26,16 @@ class Log {
 /**
  * @class
  *
- * Short-config: [path, methods, defaults]
+ * Short-config: [path, methods, pathDefault]
  * ['/:controller/:id', 'get,post', ['id' => null]]
  * Same as: ['path' => '/:controller/:id', 'methods' => ['get', 'post'], ['id' => null]]
+ *
+ * @todo Remove old stuff and figure out how to deal with different "parts".
  */
 class Route extends Component {
     private $_regexps;
     private $_formats;
-    public $defaults;
+    private $_defaults;
     ///public $import;
     ///public $target;
     ///public $forward;
@@ -43,7 +46,7 @@ class Route extends Component {
     }
 
     public function propertyFilter(array &$properties) {
-        $map = ['path', 'methods', 'defaults'];
+        $map = ['path', 'methods', 'pathDefault'];
         $values = [];
         foreach($properties as $key => $value) {
             if(is_numeric($key)) {
@@ -63,41 +66,67 @@ class Route extends Component {
         parent::init();
     }
 
+    public function getPathDefault() {
+        return $this->getDefaultPart('uri:path');
+    }
+
+    public function setPathDefault($default) {
+        $this->setDefaultPart('uri:path', $default);
+    }
+
+    public function setDefaultPart($part, $default) {
+        $this->_defaults[$part] = $default;
+        return $this;
+    }
+
+    public function getDefaultPart($part, $default = null) {
+        return isset($this->_defaults[$part]) ? $this->_defaults[$part] : $default;
+    }
+
+    public function getDefaults() {
+        return $this->_defaults;
+    }
+
+    public function setDefaults($defaults) {
+        $this->_defaults = $defaults;
+        return $this;
+    }
+
     public function getMethods() {
-        return $this->getFormat('http:method');
+        return $this->getFormatPart('http:method');
     }
 
     public function setMethods($methods) {
         if(is_string($methods)) {
             $methods = str_replace('@rest', 'head,options,get,put,post,patch,delete', $methods); # TODO: Real aliases
             $methods = strtoupper($methods);
-            $methods = explode(',', $methods);
+            $methods = [':http_method' => explode(',', $methods)]; // TODO: Not sure how we should to this
         }
-        return $this->setFormat('http:method', $methods);
+        return $this->setFormatPart('http:method', $methods);
     }
 
     public function getScheme() {
-        return $this->getFormat('uri:scheme');
+        return $this->getFormatPart('uri:scheme');
     }
 
     public function setScheme($scheme) {
-        return $this->setFormat('uri:scheme', $scheme);
+        return $this->setFormatPart('uri:scheme', $scheme);
     }
 
     public function getPath() {
-        return $this->getFormat('uri:path');
+        return $this->getFormatPart('uri:path');
     }
 
     public function setPath($path) {
-        return $this->setFormat('uri:path', $path);
+        return $this->setFormatPart('uri:path', $path);
     }
 
     public function getHost() {
-        return $this->getFormat('uri:host');
+        return $this->getFormatPart('uri:host');
     }
 
     public function setHost($host) {
-        return $this->setFormat('uri:host', $path);
+        return $this->setFormatPart('uri:host', $path);
     }
 
     public function getFormats() {
@@ -111,16 +140,16 @@ class Route extends Component {
 
     public function addFormats(array $formats) {
         foreach($formats as $part => $format) {
-            $this->setFormat($part, $format);
+            $this->setFormatPart($part, $format);
         }
         return $this;
     }
 
-    public function getFormat($part, $default = null) {
+    public function getFormatPart($part, $default = null) {
         return isset($this->_formats[$part]) ? $this->_formats[$part] : $default;
     }
 
-    public function setFormat($part, $format) {
+    public function setFormatPart($part, $format) {
         $regexp = $this->compilePatterns($format);
         $this->_formats[$part] = $format;
         $this->_regexps[$part] = $regexp;
@@ -161,9 +190,14 @@ class Route extends Component {
         CoreException::raise();
     }
 
+    /**
+     * @todo Prioritize final merge, so we can specify if http should override uri params or vice versa.
+     */
     public function match($request) {
         if(HI_LOG) Log::trace('%s: Try: %s', __METHOD__, $request);
+
         $matches = [];
+
         foreach($this->regexps as $part => $regexp) {
             $subject = $this->getRequestPart($request, $part);
             if(!preg_match($regexp, $subject, $match)) {
@@ -171,36 +205,44 @@ class Route extends Component {
                 return false;
             }
             if(HI_LOG) Log::trace('%s:   Match! part="%s" regexp="%s" subject="%s": "%s"', __METHOD__, $part, $regexp, $subject, $match);
-            $matches[] = $match;
+            $matches[$part] = $match;
         }
+
+        if(!$matches) {
+            if(HI_LOG) Log::trace('%s:   Empty match! request="%s"', __METHOD__, $request);
+            return false;
+        }
+
         if(HI_LOG) Log::trace('%s:   Success!: "%s"', __METHOD__, $matches);
-        var_dump($matches);
-        die;
-        return false;
-        /*foreach($this->regexps as $part => regexp) {
-            $matches = [];
-            foreach($parts as $part => $regexp) {
-                if(!preg_match($regexp, $request->uri->$part, $match)) {
-                    $matches = false;
-                    break;
-                }
-                $matches[] = $match;
+
+        foreach($this->defaults as $part => $default) {
+            if(empty($matches[$part])) {
+                continue;
             }
-            if($matches) {
-                $match = call_user_func_array('array_merge', $matches);
-                foreach($this->target as $key => $value) {
+            foreach($default as $key => $value) {
+                if(!isset($matches[$part][$key])) {
                     if($value instanceof \Closure) {
-                        $value = call_user_func($value, $this);
+                        $value = call_user_func($this, $value);
                     }
-                    if(!isset($match[$key])) {
-                        $match[$key] = $value;
-                    }
-                    $match[$key] = $this->replaceParameters($match[$key], $match);
+                    $matches[$part][$key] = $value;
                 }
-                return $match;
             }
         }
-        return false;*/
+
+        $match = call_user_func_array('array_merge', $matches);
+        if(HI_LOG) Log::trace('%s:   Match merged: "%s"', __METHOD__, $match);
+
+        foreach($match as $key => $value) {
+            if(is_numeric($key)) {
+                unset($match[$key]);
+            } else {
+                $match[$key] = $this->replaceParameters($value, $match);
+            }
+        }
+
+        if(HI_LOG) Log::trace('%s:   Final result: "%s"', __METHOD__, $match);
+
+        return $match;
     }
 
     function build($name, array $parameters) {
@@ -290,17 +332,26 @@ class Route extends Component {
     }
 
     function compilePatterns($patterns) {
-        is_string($patterns) and $patterns =  [$patterns];
-        foreach($patterns as &$pattern) {
-            $callback = function($match) {
-                $types = [
-                    'string' => '\w\-_',
-                    'alpha' => '\w',
-                    'int' => '\d',
-                ];
-                $type = trim($match['type'], ' ()\\');
-                $type = isset($types[$type]) ? $types[$type] : $types['string'];
-                return sprintf('(?<%s>[%s]+)', $match['name'], $type);
+        $result = [];
+        is_string($patterns) and $patterns = [$patterns => null];
+        foreach($patterns as $pattern => $exactMatch) {
+            $callback = function($match) use($exactMatch) {
+                if($exactMatch) {
+                    is_string($exactMatch) and $exactMatch = [$exactMatch];
+                    $exactMatch = array_map(function($item) {
+                        return preg_quote($item, '/');
+                    }, $exactMatch);
+                    return sprintf('(?<%s>[%s]+)', $match['name'], implode('|', $exactMatch));
+                } else {
+                    $types = [
+                        'string' => '\w\-_',
+                        'alpha' => '\w',
+                        'int' => '\d',
+                    ];
+                    $type = trim($match['type'], ' ()\\');
+                    $type = isset($types[$type]) ? $types[$type] : $types['string'];
+                    return sprintf('(?<%s>[%s]+)', $match['name'], $type);
+                }
             };
             $search = '/\\\:(?<name>[\w]+)(?<type>\\\\\([\w]+\\\\\)|)/';
             try {
@@ -309,9 +360,11 @@ class Route extends Component {
             } catch(\Exception $ex) {
                 throw \hikari\exception\Core::raise('Could not compile pattern: "%s", error: "%s"', $pattern, $ex->getMessage());
             }
+            $result[] = $pattern;
         }
-        $pattern = implode('|', $patterns);
-        $regexp = '/^' . $pattern . '$/';
+        $result = implode('|', $result);
+        $regexp = '/^' . $result . '$/';
+        var_dump($regexp);
         return $regexp;
     }
 }
