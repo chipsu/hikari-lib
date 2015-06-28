@@ -1,0 +1,6 @@
+{
+  "name": "metrica/hikari-lib",
+  "require": {
+    "php": "~5.5.9"
+  },
+}
