@@ -2,9 +2,21 @@
 
 umask(002);
 
-!defined('HI_ENV') && define('HI_ENV', getenv('HI_ENV') ?: 'development');
-!defined('HI_DEBUG') && define('HI_DEBUG', getenv('HI_DEBUG') ?: HI_ENV != 'production');
-!defined('HI_LOG') && define('HI_LOG', HI_DEBUG);
+!defined('HI_ENV') and define('HI_ENV', getenv('HI_ENV') ?: 'development');
+!defined('HI_DEBUG') and define('HI_DEBUG', getenv('HI_DEBUG') ?: HI_ENV != 'production');
+
+// Logging constants
+
+define('HI_LOGLEVEL_DEBUG',     1000);
+define('HI_LOGLEVEL_TRACE',     2000);
+define('HI_LOGLEVEL_WARNING',   5000);
+define('HI_LOGLEVEL_ERROR',     9999);
+
+!defined('HI_LOG') and define('HI_LOG', HI_DEBUG ? HI_LOG_DEBUG : HI_LOG_WARNING);
+!defined('HI_LOG_DEBUG') and define('HI_LOG_DEBUG', HI_LOG <= HI_LOGLEVEL_DEBUG);
+!defined('HI_LOG_TRACE') and define('HI_LOG_TRACE', HI_LOG <= HI_LOGLEVEL_TRACE);
+!defined('HI_LOG_WARNING') and define('HI_LOG_WARNING', HI_LOG <= HI_LOGLEVEL_WARNING);
+!defined('HI_LOG_ERROR') and define('HI_LOG_ERROR', HI_LOG <= HI_LOGLEVEL_ERROR);
 
 require_once __DIR__ . '/core/Autoload.php';
 

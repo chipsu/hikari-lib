@@ -4,24 +4,7 @@ namespace hikari\router;
 
 use \hikari\core\Component;
 use \hikari\core\Uri;
-
-class Log {
-    static function trace() {
-        if(!headers_sent()) {
-            header('content-type: text');
-        }
-        $args = func_get_args();
-        foreach($args as &$arg) {
-            if(is_object($arg)) {
-                $arg = (string)$arg;
-            } else if(is_array($arg)) {
-                $arg = print_r($arg, true);
-            }
-        }
-        call_user_func_array('printf', $args);
-        echo PHP_EOL;
-    }
-}
+use \hikari\core\Log;
 
 /**
  * @class
@@ -194,26 +177,26 @@ class Route extends Component {
      * @todo Prioritize final merge, so we can specify if http should override uri params or vice versa.
      */
     public function match($request) {
-        if(HI_LOG) Log::trace('%s: Try: %s', __METHOD__, $request);
+        if(HI_LOG_TRACE) Log::trace('%s: Try: %s', __METHOD__, $request);
 
         $matches = [];
 
         foreach($this->regexps as $part => $regexp) {
             $subject = $this->getRequestPart($request, $part);
             if(!preg_match($regexp, $subject, $match)) {
-                if(HI_LOG) Log::trace('%s:   Failed! part="%s" regexp="%s" subject="%s"', __METHOD__, $part, $regexp, $subject);
+                if(HI_LOG_TRACE) Log::trace('%s:   Failed! part="%s" regexp="%s" subject="%s"', __METHOD__, $part, $regexp, $subject);
                 return false;
             }
-            if(HI_LOG) Log::trace('%s:   Match! part="%s" regexp="%s" subject="%s": "%s"', __METHOD__, $part, $regexp, $subject, $match);
+            if(HI_LOG_TRACE) Log::trace('%s:   Match! part="%s" regexp="%s" subject="%s": "%s"', __METHOD__, $part, $regexp, $subject, $match);
             $matches[$part] = $match;
         }
 
         if(!$matches) {
-            if(HI_LOG) Log::trace('%s:   Empty match! request="%s"', __METHOD__, $request);
+            if(HI_LOG_TRACE) Log::trace('%s:   Empty match! request="%s"', __METHOD__, $request);
             return false;
         }
 
-        if(HI_LOG) Log::trace('%s:   Success!: "%s"', __METHOD__, $matches);
+        if(HI_LOG_TRACE) Log::trace('%s:   Success!: "%s"', __METHOD__, $matches);
 
         foreach($this->defaults as $part => $default) {
             if(empty($matches[$part])) {
@@ -230,7 +213,7 @@ class Route extends Component {
         }
 
         $match = call_user_func_array('array_merge', $matches);
-        if(HI_LOG) Log::trace('%s:   Match merged: "%s"', __METHOD__, $match);
+        if(HI_LOG_TRACE) Log::trace('%s:   Match merged: "%s"', __METHOD__, $match);
 
         foreach($match as $key => $value) {
             if(is_numeric($key)) {
@@ -240,7 +223,7 @@ class Route extends Component {
             }
         }
 
-        if(HI_LOG) Log::trace('%s:   Final result: "%s"', __METHOD__, $match);
+        if(HI_LOG_TRACE) Log::trace('%s:   Final result: "%s"', __METHOD__, $match);
 
         return $match;
     }
@@ -341,7 +324,7 @@ class Route extends Component {
                     $exactMatch = array_map(function($item) {
                         return preg_quote($item, '/');
                     }, $exactMatch);
-                    return sprintf('(?<%s>[%s]+)', $match['name'], implode('|', $exactMatch));
+                    return sprintf('(?<%s>%s)', $match['name'], implode('|', $exactMatch));
                 } else {
                     $types = [
                         'string' => '\w\-_',
