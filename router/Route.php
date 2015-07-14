@@ -347,7 +347,6 @@ class Route extends Component {
         }
         $result = implode('|', $result);
         $regexp = '/^' . $result . '$/';
-        var_dump($regexp);
         return $regexp;
     }
 }
