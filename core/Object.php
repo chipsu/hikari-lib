@@ -19,6 +19,9 @@ class Object {
         }
         $class = $properties['class'];
         unset($properties['class']);
+        if(!class_exists($class)) {
+            InvalidOperationException::raise('Class %s not found', $class);
+        }
         return new $class($properties);
     }
 
