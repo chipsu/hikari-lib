@@ -9,9 +9,9 @@ class Bootstrap {
         Autoload::push($properties['path'] . '/..');
         Autoload::push($properties['path'] . '/lib'); // TODO: Autoload config
         $name = isset($properties['name']) ? $properties['name'] : basename($properties['path']);
-        $class = isset($properties['class']) ? $properties['class'] : '\\' . $name .'\application\Application';
+        $class = isset($properties['class']) ? $properties['class'] : '\\' . $name .'\core\Application';
         if(!class_exists($class)) {
-            $class = '\hikari\application\Application';
+            $class = '\hikari\core\Application';
         }
         $app = new $class($properties);
         return $app;
