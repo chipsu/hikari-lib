@@ -10,6 +10,7 @@ class RouteGroup extends Component {
     public $name;
     private $_routes = [];
     public $paramMap = [];
+    public $defaultParams = [];
     public $propertyFilters = ['propertyFilter'];
 
     public function propertyFilter(array &$properties) {

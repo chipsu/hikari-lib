@@ -8,28 +8,40 @@ class ParamMap extends Component {
     public $map = [];
 
     public function replace(array $input) {
-        $result = [];
+        $result = $input;
 
         foreach($this->map as $key => $items) {
             if(!isset($input[$key])) {
                 continue;
             }
 
+            $fail = false;
+            $param = $input[$key];
+
             if(isset($items[$input[$key]])) {
-                $result[$key] = $items[$input[$key]];
+                $param = $items[$input[$key]];
             } else if(isset($items['*'])) {
-                $result[$key] = $items['*'];
+                $param = $items['*'];
             } else {
                 continue;
             }
 
-            $result[$key] = preg_replace_callback('/\:(?<key>\w+)/', function($match) use($input) {
-                $result = $input[lcfirst($match['key'])];
+            $param = preg_replace_callback('/\:(?<key>\w+)/', function($match) use($input, &$fail) {
+                $key = lcfirst($match['key']);
+                if(!isset($input[$key])) {
+                    $fail = true;
+                    return $match['key'];
+                }
+                $result = $input[$key];
                 if(strtoupper($match['key'][0]) === $match['key'][0]) {
                     $result = ucfirst($result);
                 }
                 return $result;
-            }, $result[$key]);
+            }, $param);
+
+            if(!$fail) {
+                $result[$key] = $param;
+            }
         }
 
         return $result;

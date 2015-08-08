@@ -10,6 +10,7 @@ abstract class RouterAbstract extends Component implements RouterInterface {
     public $paramMap = [];
     public $cache;
     private $_cachePrefix;
+    public $defaultParams = [];
 
     public $routes_OLD;
 
@@ -71,11 +72,17 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         foreach($this->groups as $group) {
             if($match = $group->match($request)) {
                 $result = clone $request;
+                $queryParams = array_merge(
+                    $this->defaultParams,
+                    $group->defaultParams,
+                    $result->queryParams,
+                    $match
+                );
                 if($paramMap = array_merge($this->paramMap, $group->paramMap)) {
                     $paramMap = new ParamMap(['map' => $paramMap]);
-                    $match = $paramMap->replace($match);
+                    $queryParams = $paramMap->replace($queryParams);
                 }
-                $result->queryParams = array_merge($result->queryParams, $match);
+                $result->queryParams = $queryParams;
                 $this->cache and $this->cache->set($cacheKey, $result);
                 return $result;
             }
