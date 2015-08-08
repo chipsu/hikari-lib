@@ -41,33 +41,37 @@ class Uri extends Component {
     }
 
     function __toString() {
-        $scheme = $this->scheme ? $this->scheme : 'http';
-        $result = $scheme . '://';
+        try {
+            $scheme = $this->scheme ? $this->scheme : 'http';
+            $result = $scheme . '://';
 
-        if($part = $this->host) {
-            $result .= $part;
-        } else {
-            $result .= Server::host();
-        }
-
-        if($part = $this->port) {
-            if(!isset(static::$defaultPorts[$scheme]) || $part != static::$defaultPorts[$scheme]) {
-                $result .= ':' . $part;
+            if($part = $this->host) {
+                $result .= $part;
+            } else {
+                $result .= Server::host();
             }
-        }
 
-        if($part = $this->path) {
-            $result .= $part[0] === '/' ? $part : '/' . $part;
-        }
+            if($part = $this->port) {
+                if(!isset(static::$defaultPorts[$scheme]) || $part != static::$defaultPorts[$scheme]) {
+                    $result .= ':' . $part;
+                }
+            }
 
-        if($part = $this->query) {
-            $result .= '?' . $part;
-        }
+            if($part = $this->path) {
+                $result .= $part[0] === '/' ? $part : '/' . $part;
+            }
 
-        if($part = $this->fragment) {
-            $result .= '#' . $part;
-        }
+            if($part = $this->query) {
+                $result .= '?' . $part;
+            }
 
-        return $result;
+            if($part = $this->fragment) {
+                $result .= '#' . $part;
+            }
+
+            return $result;
+        } catch(\Exception $ex) {
+            \hikari\core\Bootstrap::exceptionHandler($ex);
+        }
     }
 }

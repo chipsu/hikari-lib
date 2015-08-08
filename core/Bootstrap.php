@@ -73,6 +73,13 @@ class Bootstrap {
         register_shutdown_function(static::$shutdownFunction);
     }
 
+    static function exceptionHandler(\Exception $exception, $die = true) {
+        call_user_func(static::$exceptionHandler, $exception);
+        if($die) {
+            die;
+        }
+    }
+
     static function defaultExceptionHandler(\Exception $exception) {
         if(!headers_sent()) {
             http_response_code(500);
@@ -101,14 +108,17 @@ class Bootstrap {
             if(!headers_sent()) {
                 header('Content-Type: text/html');
             }
+            echo '<!DOCTYPE HTML>';
+            echo '<html><body>';
             echo '<h1>Error in application</h1>';
             if(HI_DEBUG) {
-                echo '<pre>';
+                echo '<pre style="width:100%;white-space:pre-wrap">';
                 var_dump($error['summary']);
                 echo '</pre>';
             } else {
                 echo '<p>' . $error['summary'] . '</p>';
             }
+            echo '</body></html>';
             break;
         case 'application/json':
             if(!headers_sent()) {
@@ -127,7 +137,6 @@ class Bootstrap {
     }
 
     static function defaultErrorHandler($code, $message, $filename, $lineno) {
-        var_dump("error!");
         throw new \ErrorException($message, $code, 1, $filename, $lineno);
     }
 

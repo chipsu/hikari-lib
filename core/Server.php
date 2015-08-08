@@ -20,23 +20,23 @@ class Server {
     }
 
     static function host() {
-        return $_SERVER['HTTP_HOST'];
+        return isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
     }
 
     static function port() {
-        return $_SERVER['SERVER_PORT'];
+        return isset($_SERVER['SERVER_PORT']) ? $_SERVER['SERVER_PORT'] : 80;
     }
 
     static function queryString() {
-        return $_SERVER['QUERY_STRING'];
+        return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
     }
 
     static function requestUri() {
-        return $_SERVER['REQUEST_URI'];
+        return isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
     }
 
     static function contentType() {
-        return $_SERVER['CONTENT_TYPE'];
+        return isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '';
     }
 
     static function requestMethod() {
@@ -58,14 +58,14 @@ class Server {
     }
 
     static function referer() {
-        return $_SERVER['HTTP_REFERER'];
+        return isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
     }
 
     protected static function rewriteFix() {
         static $fixed = false;
         if($fixed === false) {
-            if(empty($_GET) && ($pos = strpos($_SERVER['REQUEST_URI'], '?')) !== false) {
-                $query = substr($_SERVER['REQUEST_URI'], $pos + 1);
+            if(empty($_GET) && ($uri = static::requestUri()) && ($pos = strpos($uri, '?')) !== false) {
+                $query = substr($uri, $pos + 1);
                 parse_str($query, $_GET);
                 $_REQUEST = array_merge($_GET, $_REQUEST);
             }

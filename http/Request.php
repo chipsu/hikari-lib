@@ -153,9 +153,13 @@ class Request extends Component {
     }
 
     function __toString() {
-        if($this->uri instanceof Uri) {
-            return (string)$this->uri;
+        try {
+            if($this->uri instanceof Uri) {
+                return (string)$this->uri;
+            }
+            return null;
+        } catch(\Exception $ex) {
+            \hikari\core\Bootstrap::exceptionHandler($ex);
         }
-        return null;
     }
 }
