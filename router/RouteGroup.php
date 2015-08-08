@@ -9,7 +9,7 @@ use \hikari\http\Request;
 class RouteGroup extends Component {
     public $name;
     private $_routes = [];
-    public $controllerMap = [];
+    public $paramMap = [];
     public $propertyFilters = ['propertyFilter'];
 
     public function propertyFilter(array &$properties) {

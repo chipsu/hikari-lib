@@ -7,7 +7,7 @@ use \hikari\core\Uri;
 
 abstract class RouterAbstract extends Component implements RouterInterface {
     private $_groups = [];
-    public $controllerMap = [];
+    public $paramMap = [];
     public $cache;
     private $_cachePrefix;
 
@@ -71,6 +71,10 @@ abstract class RouterAbstract extends Component implements RouterInterface {
         foreach($this->groups as $group) {
             if($match = $group->match($request)) {
                 $result = clone $request;
+                if($paramMap = array_merge($this->paramMap, $group->paramMap)) {
+                    $paramMap = new ParamMap(['map' => $paramMap]);
+                    $match = $paramMap->replace($match);
+                }
                 $result->queryParams = array_merge($result->queryParams, $match);
                 $this->cache and $this->cache->set($cacheKey, $result);
                 return $result;

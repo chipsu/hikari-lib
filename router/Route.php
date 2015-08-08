@@ -297,6 +297,7 @@ class Route extends Component {
 
     function replaceParameters($subject, array $parameters, &$keys = null) {
         // CamelCase Controller temp fix.
+        // This basically does the same thing as ParamMap
         $callback = function($variable) use($parameters, &$keys) {
             $key = strtolower($variable[1]);
             $result = false;
