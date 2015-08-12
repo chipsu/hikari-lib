@@ -6,5 +6,5 @@ interface CrudInterface extends ModelInterface {
     function create();
     function read();
     function update();
-    function dispose();
+    function delete();
 }
