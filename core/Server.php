@@ -44,10 +44,23 @@ class Server {
     }
 
     static function headers() {
-        if(static::$headers === null) {
-            static::$headers = http_get_request_headers();
+        if(function_exists('http_get_request_headers')) {
+            $result = \http_get_request_headers();
+        } else if(function_exists('getallheaders')) {
+            // I have no idea, the following code results in undefined index:
+            // $x = getallheaders(); foreach($x as $k => $v) { echo $x[$k]; }
+            // array_change_key_case below seems to fix it..
+            $result = getallheaders();
+        } else {
+            $result = [];
+            foreach($_SERVER as $key => $value) {
+                if(substr($key, 0, 5) === 'HTTP_') {
+                    $name = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($key, 5)))));
+                    $result[$name] = $value;
+                }
+            }
         }
-        return static::$headers;
+        return array_change_key_case($result, \CASE_LOWER);
     }
 
     static function https() {

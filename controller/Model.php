@@ -18,21 +18,14 @@ class Model extends Controller implements ModelInterface {
     protected function loadModel($throw = 404) {
         $class = $this->modelClassName();
         $query = $this->buildRequestQuery();
-        #if(!empty($query['_id'])) {
-        #    $result = $class::one($query, ['hydrator' => true]);
-        #    if(!$result) {
-        #        \hikari\exception\Http::raise(404);
-        #    }
-        #} else {
-        #    $result = $class::find($query, ['hydrator' => true]);
-        #}
-        #    $result = $class::one($query, ['hydrator' => true]);
-        $result = $class::find($query, ['hydrator' => true]);
-        if(!$result && isset($query['_id'])) {
-            if($throw) {
+        if(!empty($query['_id'])) {
+            $result = $class::one($query, ['hydrator' => true]);
+            if(!$result && $throw) {
                 \hikari\exception\Http::raise($throw);
             }
             return null;
+        } else {
+            $result = $class::find($query, ['hydrator' => true]);
         }
         return $result;
     }

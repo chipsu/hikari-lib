@@ -6,19 +6,6 @@ use \hikari\core\Component;
 use \hikari\core\Server;
 use \hikari\core\Uri;
 
-if(!function_exists('getallheaders')) {
-    function getallheaders() {
-        $headers = [];
-        foreach($_SERVER as $key => $value) {
-            if(substr($key, 0, 5) === 'HTTP_') {
-                $name = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($key, 5)))));
-                $headers[$name] = $value;
-            }
-        }
-        return $headers;
-    }
-}
-
 class Request extends Component {
     const METHOD_GET = 'GET';
     const METHOD_POST = 'POST';
@@ -66,20 +53,19 @@ class Request extends Component {
 
     function getHeaders() {
         if($this->_headers === null) {
-            if(function_exists('http_get_request_headers')) {
-                $this->_headers = \http_get_request_headers();
-            } else if(function_exists('getallheaders')) {
-                $this->_headers = \getallheaders();
-            } else {
-                $this->_headers = getallheaders();
-            }
+            $this->_headers = Server::headers();
         }
         return $this->_headers;
     }
 
-    function header($name, $default = null) {
+    function header($name, $default = null, $strip = false) {
         $headers = $this->getHeaders();
-        return isset($headers[$name]) ? $headers[$name] : $default;
+        $result = isset($headers[$name]) ? $headers[$name] : $default;
+        if($strip && $result) {
+            $result = explode(';', $result);
+            $result = explode(',', $result[0]);
+        }
+        return $result;
     }
 
     function getBody() {

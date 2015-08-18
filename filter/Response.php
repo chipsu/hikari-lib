@@ -17,9 +17,7 @@ class Response extends Filter {
     }
 
     function beforeAction($event) {
-        $accept = $event->controller->request->header('Accept');
-        $accept = explode(';', $accept);
-        $accept = explode(',', $accept[0]);
+        $accept = $event->controller->request->header('accept', null, true);
         $accept[]  = '*'; // FIXME
         $formats = $this->getFormats();
         foreach($accept as $format) {
