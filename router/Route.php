@@ -228,10 +228,7 @@ class Route extends Component {
         return $match;
     }
 
-    function build($name, array $parameters) {
-        if($name != $this->name) {
-            return false;
-        }
+    function build(array $parameters) {
         if(!$this->format) {
             return false;
         }

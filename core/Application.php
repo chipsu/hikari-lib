@@ -7,17 +7,44 @@ use hikari\exception\Core as CoreException;
 use hikari\exception\NotImplemented as NotImplementedException;
 
 class Application extends ApplicationAbstract {
-    #public $router;
-    #public $request;
+    private $_router;
+    private $_request;
 
     function __construct(array $properties = []) {
         parent::__construct($properties);
-        $this->createComponent('router', [], ['register' => true]);
+    }
+
+    function getRouter() {
+        if($this->_router === null) {
+            $this->_router = $this->createComponent('router');
+        }
+        return $this->_router;
+    }
+
+    function getRequest() {
+        if($this->_request === null) {
+            $this->_request = $this->createComponent('request');
+        }
+        return $this->_request;
     }
 
     function run() {
-        $this->createComponent('request', [], ['register' => true, 'replace' => true]);
-        $event = $this->request();
+        try {
+            $event = $this->handleRequest($this->request);
+        } catch(\Exception $exception) {
+            $errorRequest = new \hikari\http\Request([
+                'queryParams' => [
+                    'controller' => 'error',
+                    'exception' => $exception,
+                ],
+            ]);
+            try {
+                $event = $this->handleRequest($errorRequest);
+            } catch(\Exception $innerException) {
+                // TODO: Log error route fail
+                throw $exception;
+            }
+        }
         if($event->handled) {
             foreach($event->headers as $key => $value) {
                 header($key . ': ' . $value);
@@ -26,13 +53,17 @@ class Application extends ApplicationAbstract {
         }
     }
 
-    function request() {
-        $request = $this->router->route($this->request);
-        $request->bodyParams = $this->request->bodyParams; // TODO: Not sure if this should be here or in the Router
+    function forward($request) {
+        return $this->handleRequest($request);
+    }
+
+    protected function handleRequest($request) {
+        $routedRequest = $this->router->route($request);
+        $routedRequest->bodyParams = $request->bodyParams; // TODO: Not sure if this should be here or in the Router
         $controller = $this->createComponent('controller', [
-            'class' => $request->query('controller'),
+            'class' => $routedRequest->query('controller'),
             'application' => $this,
-            'request' => $request,
+            'request' => $routedRequest,
             'components' => [
                 'router' => $this->router, # FIXME
             ],
@@ -41,9 +72,5 @@ class Application extends ApplicationAbstract {
             CoreException::raise('Controller should be an instance of ControllerInterface');
         }
         return $controller->run();
-    }
-
-    function forward($request) {
-        NotImplementedException::raise('http redirect?');
     }
 }

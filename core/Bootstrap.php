@@ -82,7 +82,8 @@ class Bootstrap {
 
     static function defaultExceptionHandler(\Exception $exception) {
         if(!headers_sent()) {
-            http_response_code(500);
+            $code = $exception instanceof \hikari\exception\Http ? $exception->getCode() : 500;
+            http_response_code($code);
         }
         error_log($exception);
         $accept = isset($_SERVER['HTTP_ACCEPT']) ? explode(',', $_SERVER['HTTP_ACCEPT']) : ['text/plain'];

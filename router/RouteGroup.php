@@ -47,4 +47,16 @@ class RouteGroup extends Component {
         }
         return false;
     }
+
+    public function build($name, array $parameters) {
+        if($name != $this->name) {
+            return false;
+        }
+        foreach($this->routes as $route) {
+            if($result = $route->build($parameters)) {
+                return $result;
+            }
+        }
+        return false;
+    }
 }

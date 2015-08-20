@@ -87,7 +87,7 @@ abstract class RouterAbstract extends Component implements RouterInterface {
                 return $result;
             }
         }
-        \hikari\exception\NotFound::raise();
+        \hikari\exception\Http::raise(404);
     }
 
     public function build($name, array $parameters = []) {
@@ -97,8 +97,8 @@ abstract class RouterAbstract extends Component implements RouterInterface {
                 return $result;
             }
         }
-        foreach($this->routes as $route) {
-            if($result = $route->build($name ?: 'default', $parameters)) {
+        foreach($this->groups as $group) {
+            if($result = $group->build($name ?: 'default', $parameters)) {
                 if($this->cache) {
                     $this->cache->set($cacheKey, $result);
                 }
