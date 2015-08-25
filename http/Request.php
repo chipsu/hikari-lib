@@ -59,6 +59,7 @@ class Request extends Component {
     }
 
     function header($name, $default = null, $strip = false) {
+        $name = strtolower($name);
         $headers = $this->getHeaders();
         $result = isset($headers[$name]) ? $headers[$name] : $default;
         if($strip && $result) {

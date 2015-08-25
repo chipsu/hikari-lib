@@ -48,9 +48,30 @@ class Rest extends Model implements RestInterface {
         \hikari\exception\NotImplemented::raise(__METHOD__);
     }
 
+    protected function getSkip() {
+        return (int)$this->request->header('X-Skip', parent::getSkip());
+    }
+
+    protected function getLimit() {
+        return (int)$this->request->header('X-Limit', parent::getLimit());
+    }
+
+    protected function getSort() {
+        return $this->request->header('X-Sort', parent::getSort());
+    }
+
     protected function afterAction($event) {
         if($event->result) {
             if($event->result instanceof \Iterator) {
+                if(true) {
+                    // TODO: Fix this
+                    $this->response->header('X-Skip', $event->result->skip);
+                    $this->response->header('X-Limit', $event->result->limit);
+                    $this->response->header('X-Count', $this->dataCount());
+                    if($sortString = $this->getSort()) {
+                        $this->response->header('X-Sort', $sortString);
+                    }
+                }
                 $result = [];
                 foreach($event->result as $model) {
                     $result[] = $model->toArray();

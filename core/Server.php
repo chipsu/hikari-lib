@@ -20,10 +20,15 @@ class Server {
     }
 
     static function host() {
-        return isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
+        return isset($_SERVER['HTTP_HOST']) ? preg_replace('/\:.*/', '', $_SERVER['HTTP_HOST']) : 'localhost';
     }
 
     static function port() {
+        if(isset($_SERVER['HTTP_HOST'])) {
+            if(preg_match('/\:(\d+)/', $_SERVER['HTTP_HOST'], $match)) {
+                return $match[1];
+            }
+        }
         return isset($_SERVER['SERVER_PORT']) ? $_SERVER['SERVER_PORT'] : 80;
     }
 

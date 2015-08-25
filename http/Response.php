@@ -11,7 +11,11 @@ class Response extends Component {
     }
 
     function redirect($url) {
-        header('Location: ' . $url);
+        $this->header('Location', $url);
         die;
+    }
+
+    function header($key, $value, $replace = true) {
+        header($key . ': ' . $value, $replace);
     }
 }
