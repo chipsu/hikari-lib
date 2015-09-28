@@ -8,8 +8,11 @@ namespace hikari\renderer;
 class View extends RendererAbstract {
 
     function render($event) {
-        $view = $event->controller->createComponent('view', ['controller' => $event->controller, 'data' => $event->result]);
         if($event->controller->beforeRender($event)) {
+            $view = $event->controller->createComponent('view', [
+                'controller' => $event->controller,
+                'data' => $event->result
+            ]);
             $viewFile = $event->controller->getViewFile();
             $event->result = $view->render($viewFile);
             return $event->controller->afterRender($event);

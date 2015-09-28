@@ -191,7 +191,7 @@ class Node {
  * @todo String concatenation. PHP uses ., JS uses +, HTPL uses ???. We can't really detect the type.. Use . and translate JS?
  * @todo Optimization: Elemnts with no dynamic code should be optimized into a single echo, instead of $html->tag().
  */
-class Htpl2Compiler extends CompilerAbstract {
+class Htpl extends CompilerAbstract {
     public $index;
     public $lines;
     public $indent;

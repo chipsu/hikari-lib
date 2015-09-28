@@ -4,6 +4,9 @@ namespace hikari\view;
 
 use \hikari\core\Component;
 
+# TODO: Move helpers away
+# use something else, like a "magic" data variable, like
+# $_->helper() or just export helpers like: $_helper() (internal renderer only)
 abstract class ViewAbstract extends Component implements ViewInterface {
     public $controller;
     public $cache;
@@ -23,6 +26,7 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         'php', 'phtml',
     ];
     private $_router;
+    public $renderers = [];
 
     function __construct(array $parameters = []) {
         parent::__construct($parameters);
@@ -30,12 +34,17 @@ abstract class ViewAbstract extends Component implements ViewInterface {
 
     function init() {
         if(empty($this->extensions)) {
-            $this->extensions = array_merge($this->executable, array_keys($this->compilers));
+            $this->extensions = array_merge(
+                $this->executable,
+                array_keys($this->compilers),
+                array_keys($this->renderers)
+            );
         }
         if(empty($this->storage)) {
             $this->storage = $this->application->runtimePath . '/views';
             is_dir($this->storage) or mkdir($this->storage, 0755, true);
         }
+        $this->renderers['twig'] = new \hikari\view\renderer\Twig;
         parent::init();
     }
 
@@ -80,17 +89,22 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $this->template('layout/' . $name, $data, $options);
     }
 
+    // TODO: Replace $compiles with Internal renderer
     function template($name, array $data = [], array $options = []) {
         $cacheKey = $this->cache ? [__FILE__, $name, json_encode($options)] : false;
         if(!$this->cache || !$this->cache->value($cacheKey, $file)) {
             $source = $this->find($name);
             $type = pathinfo($source, PATHINFO_EXTENSION);
-            if(!in_array($type, $this->executable)) {
+            if(isset($this->compilers[$type])) {
                 $compiler = new $this->compilers[$type];
                 $output = isset($options['output']) ? $options['output'] : 'php';
                 $result = $compiler->file($source, ['output' => $output]);
                 $file = $this->storage . '/' . sha1($source) . '.' . $output;
                 $compiler->store($file, $result);
+            } else if(isset($this->renderers[$type])) {
+                $renderer = $this->renderers[$type];
+                echo $renderer->render($source, $data, $options);
+                return;
             } else {
                 $file = $source;
             }
