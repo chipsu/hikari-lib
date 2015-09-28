@@ -6,7 +6,7 @@ use hikari\core\Mixin;
 
 class Response extends Filter {
     private $_formats = [];
-    private $_formatter;
+    private $_renderer;
 
     function getFormats() {
         return $this->_formats;
@@ -22,7 +22,7 @@ class Response extends Filter {
         $formats = $this->getFormats();
         foreach($accept as $format) {
             if(isset($formats[$format])) {
-                $this->_formatter = static::createInstance($formats[$format]);
+                $this->_renderer = static::createInstance($formats[$format]);
                 break;
             }
         }
@@ -30,9 +30,10 @@ class Response extends Filter {
     }
 
     function afterAction($event) {
-        if($this->_formatter) {
-            if($this->_formatter->run($event)) {
-                $event->headers['Content-Type'] = $this->_formatter->contentType;
+        if($this->_renderer) {
+            if($this->_renderer->render($event)) {
+                // TODO: Event should set content type?
+                $event->headers['Content-Type'] = $this->_renderer->contentType;
                 $event->handled = true;
             }
         }

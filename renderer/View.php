@@ -1,14 +1,13 @@
 <?php
 
-namespace hikari\formatter;
+namespace hikari\renderer;
 
 /**
  * @todo before & afterRender events with controller? IViewSomethignEvent or component properties?
  */
-class View extends Formatter {
-    public $contentType = 'text/html';
+class View extends RendererAbstract {
 
-    function run($event) {
+    function render($event) {
         $view = $event->controller->createComponent('view', ['controller' => $event->controller, 'data' => $event->result]);
         if($event->controller->beforeRender($event)) {
             $viewFile = $event->controller->getViewFile();
@@ -16,5 +15,9 @@ class View extends Formatter {
             return $event->controller->afterRender($event);
         }
         return false;
+    }
+
+    public function getContentType() {
+        return 'text/html';
     }
 }

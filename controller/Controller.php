@@ -15,10 +15,10 @@ class Controller extends ControllerAbstract {
             'responseFilter' => [
                 'class' => '\hikari\filter\Response',
                 'formats' => [
-                    'application/json' => '\hikari\formatter\Json',
-                    'application/xml' => '\hikari\formatter\Xml',
-                    'text/html' => '\hikari\formatter\View',
-                    '*' => '\hikari\formatter\Text',
+                    'application/json' => '\hikari\renderer\Json',
+                    'application/xml' => '\hikari\renderer\Xml',
+                    'text/html' => '\hikari\renderer\View',
+                    '*' => '\hikari\renderer\Text',
                 ],
             ],
         ];

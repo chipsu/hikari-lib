@@ -44,6 +44,7 @@ class Asset extends Component {
     }
 
     function url($asset, array $options = []) {
+        return '#FIXME';
         $id = $asset . json_encode($options);
         if($this->cache && $this->cache->value($id, $result)) {
             if($file = $this->getUrl($asset, $options, $result, $this->watch)) {
