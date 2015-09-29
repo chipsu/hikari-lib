@@ -14,7 +14,7 @@ class View extends RendererAbstract {
                 'data' => $event->result
             ]);
             $viewFile = $event->controller->getViewFile();
-            $event->result = $view->render($viewFile);
+            $event->result = $view->document($viewFile);
             return $event->controller->afterRender($event);
         }
         return false;

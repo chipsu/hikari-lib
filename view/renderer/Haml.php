@@ -1,6 +1,6 @@
 <?php
 
-namespace hikari\view\compiler;
+namespace hikari\view\renderer;
 
 # TODO: use composer (optional dependency)
 require_once __DIR__ . '/../../../haml-php/src/HamlPHP/HamlPHP.php';

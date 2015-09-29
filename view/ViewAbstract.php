@@ -14,39 +14,19 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     public $data = [];
     public $layout = 'main';
     public $content;
-    public $extensions;
     private $_paths;
-    public $storage;
-    public $compilers = [
-        'htpl' => '\hikari\view\compiler\HtplCompiler',
-        'haml' => '\hikari\view\compiler\HamlCompiler',
-        'ptpl' => '\hikari\view\compiler\PtplCompiler',
-    ];
-    public $executable = [
-        'php', 'phtml',
-    ];
     private $_router;
-    public $renderers = [];
-
-    function __construct(array $parameters = []) {
-        parent::__construct($parameters);
-    }
-
-    function init() {
-        if(empty($this->extensions)) {
-            $this->extensions = array_merge(
-                $this->executable,
-                array_keys($this->compilers),
-                array_keys($this->renderers)
-            );
-        }
-        if(empty($this->storage)) {
-            $this->storage = $this->application->runtimePath . '/views';
-            is_dir($this->storage) or mkdir($this->storage, 0755, true);
-        }
-        $this->renderers['twig'] = new \hikari\view\renderer\Twig;
-        parent::init();
-    }
+    public $extensions = [
+        'php' => 'php',
+        'phtml' => 'php',
+        'twig' => 'twig',
+        'htpl' => 'htpl',
+    ];
+    public $renderers = [
+        'php' => '\hikari\view\renderer\Php',
+        'htpl' => '\hikari\view\renderer\Htpl',
+        'twig' => '\hikari\view\renderer\Twig',
+    ];
 
     function getPaths() {
         if($this->_paths === null) {
@@ -76,67 +56,59 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         $this->_router = $value;
     }
 
-    function render($name, array $data = [], array $options = []) {
-        $this->content = $this->view($name);
+    function getRenderer($name) {
+        if(!isset($this->renderers[$name])) {
+            \hikari\exception\Argument::raise('Renderer "%s" not found');
+        }
+        if(!is_object($this->renderers[$name])) {
+            $this->renderers[$name] = $this->createComponent($this->renderers[$name]);
+        }
+        return $this->renderers[$name];
+    }
+
+    function getRendererFromExtension($extension) {
+        if(!isset($this->extensions[$extension])) {
+            \hikari\exception\Argument::raise('Alias "%s" not found');
+        }
+        $name = $this->extensions[$extension];
+        return $this->getRenderer($name);
+    }
+
+    function document($name, array $data = [], array $options = []) {
+        $this->set('view', $this); // TODO: Use context
+        $this->set('content', $this->view($name)); // TODO: Use a callback instead
         return $this->layout($this->layout, $data, $options);
     }
 
     function view($name, array $data = [], array $options = []) {
-        return $this->template('view/' . $name, $data, $options);
+        return $this->render('view/' . $name, $data, $options);
     }
 
     function layout($name, array $data = [], array $options = []) {
-        return $this->template('layout/' . $name, $data, $options);
+        return $this->render('layout/' . $name, $data, $options);
     }
 
-    // TODO: Replace $compiles with Internal renderer
-    function template($name, array $data = [], array $options = []) {
-        $cacheKey = $this->cache ? [__FILE__, $name, json_encode($options)] : false;
-        if(!$this->cache || !$this->cache->value($cacheKey, $file)) {
-            $source = $this->find($name);
-            $type = pathinfo($source, PATHINFO_EXTENSION);
-            if(isset($this->compilers[$type])) {
-                $compiler = new $this->compilers[$type];
-                $output = isset($options['output']) ? $options['output'] : 'php';
-                $result = $compiler->file($source, ['output' => $output]);
-                $file = $this->storage . '/' . sha1($source) . '.' . $output;
-                $compiler->store($file, $result);
-            } else if(isset($this->renderers[$type])) {
-                $renderer = $this->renderers[$type];
-                echo $renderer->render($source, $data, $options);
-                return;
-            } else {
-                $file = $source;
-            }
-            if($this->cache) {
-                $this->cache->set($cacheKey, $file, !$this->watch ?: [
-                    'watch' => ['src' => $source, 'dst' => $file]
-                ]);
-            }
-        }
-        if(!empty($options['source'])) {
-            return file_get_contents($file);
-        }
-        $buffer = empty($options['direct']);
-        if($buffer) {
-            ob_start() or \hikari\exception\Core::raise('ob_start failed');
-        }
-        try {
-            $this->includeFile($file, $data);
-        } catch(\Exception $ex) {
-            if($buffer) ob_end_clean();
-            throw $ex;
-        }
-        if($buffer) {
-            return ob_get_clean();
-        }
+    function render($name, array $data = [], array $options = []) {
+        $source = $this->find($name);
+        $extension = pathinfo($source, PATHINFO_EXTENSION);
+        $renderer = $this->getRendererFromExtension($extension);
+        $options = array_merge(['context' => $this], $options); // TODO: Context should be a separate class
+        $data = array_merge($this->data, $data);
+        return $renderer->render($source, $data, $options);
     }
 
     function find($name) {
+        $cacheKey = [__FILE__, $name];
+        if($this->cache && $this->cache->value($cacheKey, $file)) {
+            return $file;
+        }
         foreach($this->paths as $path) {
-            foreach($this->extensions as $extension) {
+            foreach(array_keys($this->extensions) as $extension) {
                 $file = $path . '/' . $name . '.' . $extension;
                 if(is_file($file)) {
+                    if($this->cache) {
+                        $this->cache->set($cacheKey, $file);
+                    }
                     return $file;
                 }
             }
@@ -147,10 +119,6 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     function read($name) {
         $file = $this->find($name);
         return file_get_contents($file);
-    }
-
-    function encode($string) {
-        return htmlspecialchars($string);
     }
 
     function get($key, $default = null, $encode = true) {
@@ -172,6 +140,8 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return isset($this->data[$key]);
     }
 
+    //////// Move below to helpers
+
     function str($key, array $args =  [], $encode = true) {
         if(isset($this->translator)) {
             return $encode ? htmlspecialchars($result) : $result;
@@ -179,7 +149,10 @@ abstract class ViewAbstract extends Component implements ViewInterface {
         return $key;
     }
 
-    // TODO: Mixin?
+    function encode($string) {
+        return htmlspecialchars($string);
+    }
+
     function url($route = null, array $args = [], $auto = false) {
         if($router = $this->getRouter()) {
             if($auto) {
@@ -194,11 +167,5 @@ abstract class ViewAbstract extends Component implements ViewInterface {
             return (string)$router->build($route, $args);
         }
         return $route . '?' . http_build_query($args);
-    }
-
-    protected function includeFile($_file_, array $_data_) {
-        extract($this->data);
-        extract($_data_);
-        require($_file_);
     }
 }

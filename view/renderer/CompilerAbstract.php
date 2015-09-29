@@ -1,6 +1,6 @@
 <?php
 
-namespace hikari\view\compiler;
+namespace hikari\view\renderer;
 
 abstract class CompilerAbstract implements CompilerInterface {
     public $debug = HI_DEBUG;

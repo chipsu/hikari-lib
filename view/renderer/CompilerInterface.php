@@ -1,6 +1,6 @@
 <?php
 
-namespace hikari\view\compiler;
+namespace hikari\view\renderer;
 
 interface CompilerInterface {
     function file($fileName, array $options = []);

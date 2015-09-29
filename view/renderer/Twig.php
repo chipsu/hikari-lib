@@ -2,6 +2,8 @@
 
 namespace hikari\view\renderer;
 
+use hikari\core\Component;
+
 class Loader implements \Twig_LoaderInterface {
 
     public function getSource($name) {
@@ -21,7 +23,7 @@ class Loader implements \Twig_LoaderInterface {
     }
 }
 
-class Twig {
+class Twig extends Component implements RendererInterface {
     private $_twig;
 
     function getTwig() {

@@ -1,6 +1,6 @@
 <?php
 
-namespace hikari\view\compiler;
+namespace hikari\view\renderer;
 
 use \hikari\exception\Core as ParseError;
 
@@ -191,7 +191,7 @@ class Node {
  * @todo String concatenation. PHP uses ., JS uses +, HTPL uses ???. We can't really detect the type.. Use . and translate JS?
  * @todo Optimization: Elemnts with no dynamic code should be optimized into a single echo, instead of $html->tag().
  */
-class Htpl extends CompilerAbstract {
+class HtplCompiler extends CompilerAbstract {
     public $index;
     public $lines;
     public $indent;
@@ -466,5 +466,42 @@ class Htpl extends CompilerAbstract {
             }
         }
         return false;
+    }
+}
+
+
+class Htpl extends Php {
+    private $_compiler;
+    private $_storage;
+
+    function getCompiler() {
+        if($this->_compiler === null) {
+            $this->_compiler = new HtplCompiler;
+        }
+        return $this->_compiler;
+    }
+
+    function getStorage() {
+        if($this->_storage === null) {
+            $this->_storage = $this->application->runtimePath . '/views';
+            is_dir($this->_storage) or mkdir($this->_storage, 0755, true);
+        }
+        return $this->_storage;
+    }
+
+    function render($source, array $data, array $options) {
+        $cacheKey = $this->cache ? [$source, json_encode($options)] : false;
+        if(!$this->cache || !$this->cache->value($cacheKey, $file)) {
+            $output = isset($options['output']) ? $options['output'] : 'php';
+            $result = $this->compiler->file($source, ['output' => $output]);
+            $file = $this->storage . '/' . sha1($source) . '.' . $output;
+            $this->compiler->store($file, $result);
+            if($this->cache) {
+                $this->cache->set($cacheKey, $file, !$this->watch ?: [
+                    'watch' => ['src' => $source, 'dst' => $file]
+                ]);
+            }
+        }
+        return parent::render($file, $data, $options);
     }
 }

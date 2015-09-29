@@ -44,8 +44,8 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
     public function expand($string) {
         $map = [
             '@app' => $this->application->path,
-            '@lib' => $this->application->path . '/../metrica/hikari-lib',
-            '@vendor' => $this->application->path . '/../vendor',
+            '@lib' => realpath($this->application->path . '/../metrica/hikari-lib'),
+            '@vendor' => realpath($this->application->path . '/../vendor'),
             '@role' => 'admin',
         ];
         return str_replace(array_keys($map), array_values($map), $string);
