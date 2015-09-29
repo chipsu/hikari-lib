@@ -17,10 +17,10 @@ abstract class ViewAbstract extends Component implements ViewInterface {
     private $_paths;
     private $_router;
     public $extensions = [
-        'php' => 'php',
-        'phtml' => 'php',
+        //'php' => 'php',
+        //'phtml' => 'php',
         'twig' => 'twig',
-        'htpl' => 'htpl',
+        //'htpl' => 'htpl',
     ];
     public $renderers = [
         'php' => '\hikari\view\renderer\Php',

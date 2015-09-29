@@ -41,19 +41,24 @@ abstract class ApplicationAbstract extends Component implements ApplicationInter
         }
     }
 
-    public function expand($string) {
+    public function expand($string, array $options = []) {
         $map = [
             '@app' => $this->application->path,
             '@lib' => realpath($this->application->path . '/../metrica/hikari-lib'),
             '@vendor' => realpath($this->application->path . '/../vendor'),
+            '@runtime' => $this->runtimePath,
             '@role' => 'admin',
         ];
-        return str_replace(array_keys($map), array_values($map), $string);
+        $result = str_replace(array_keys($map), array_values($map), $string);
+        if(!empty($options['mkdir']) && !is_dir($result)) {
+            mkdir($result, 0777, true);
+        }
+        return $result;
     }
 
-    public function expandArray(array $array) {
+    public function expandArray(array $array, array $options = []) {
         foreach($array as &$string) {
-            $string = $this->expand($string);
+            $string = $this->expand($string, $options);
         }
         return $array;
     }

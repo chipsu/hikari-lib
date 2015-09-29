@@ -4,6 +4,15 @@ namespace hikari\view\renderer;
 
 use hikari\core\Component;
 
+class Cache extends \Twig_Cache_Filesystem {
+
+    public function load($key) {
+        if(is_file($key)) {
+            include_once $key;
+        }
+    }
+}
+
 class Loader implements \Twig_LoaderInterface {
 
     public function getSource($name) {
@@ -30,6 +39,8 @@ class Twig extends Component implements RendererInterface {
         if($this->_twig == null) {
             $loader = new Loader;
             $this->_twig = new \Twig_Environment($loader);
+            $cachePath = $this->application->expand('@runtime/twig-cache', ['mkdir' => true]);
+            $this->_twig->setCache(new Cache($cachePath));
         }
         return $this->_twig;
     }
